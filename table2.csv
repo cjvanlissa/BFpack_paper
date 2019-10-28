@@ -1,0 +1,6 @@
+"","Example hypotheses"
+"Exploratory testing","$H_0:\theta=0$ vs $H_1:\theta < 0$ vs $H_2:\theta > 0$."
+"Interval testing","$H_0:|\theta|\le \epsilon$ vs $H_1:|\theta| > \epsilon$, for given $\epsilon>0$."
+"Precise testing","$H_1:\theta_{1}=\theta_{2}=\theta_{3}$ vs $H_2:$ ``not $H_1$''"
+"Order testing","$H_1:\theta_{1}>\theta_{2}>\theta_{3}$ vs $H_2:\theta_{1}<\theta_{2}<\theta_{3}$vs $H_3:$ ``neither $H_1$, nor $H_2$''."
+"Equality and order testing","$H_1:\theta_{12}<\theta_{13}=\theta_{14}$ versus $H_2:$ ``not $H_1$''."
