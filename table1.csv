@@ -1,33 +1,22 @@
-"`R` function","package","test","parameter type","example parameter","Bayes factor"
-"`t\_test`","`bain`","Student $t$ test","mean (1-sample test)
- mean difference  
- (2-sample test)","`mu`
- `difference` ","exact
- exact"
-"`var\_test`","`BFpack`","heterogeneity of
-variances","group variances","`g1`","exact"
-"`aov`","`stats`","AN(C)OVA","group means","`g1`","exact"
-"`manova`","`stats`","MAN(C)OVA","group means","`g1_on_y1`","exact"
-"`lm`","`stats`","linear regression
- multivariate regression","regression coefficients
- regression coefficients 
- measures of association 
-meas. of assoc. in group ","`x1`
- `x1_on_y1` 
- `y1_with_y2`, 
- `y1_with_y2_in_g1` ","exact
- exact
- exact
- exact"
-"`lmer`","`lme4`","random intercept
-model ","group specific
-intraclass correlations","`g1`","exact"
-"`hetcor`","`polycor`","correlation analysis","measures of association","`y1_with_y2`","approx."
-"`glm`","`stats`","generalized linear model","regression coefficients","`x1`","approx."
-"`coxph`,
-`survreg` ","`survival`","survival analysis","regression coefficients","`x1`","approx."
-"`rem`,
-`rem.dyad`","`relevent`","relational event model","regression coefficients","`x1`","approx."
-"`polr`","`MASS`","ordinal regression","regression coefficients","`x1`","approx."
-"`zeroinfl`","`pscl`","zero-inflated
- regression models","regression coefficients","`x1`","approx."
+"R function","package","test","parameter type","example parameter","Bayes factor"
+"t_test","bain","Student t test","mean (1-sample test)", "mu", "exact"
+,,,"mean difference", "difference",
+,,,"(2-sample test)",,
+"bartlett_test","BFpack","heterogeneity of","group variances","g1","exact"
+,,variances,,,
+"aov","stats","AN(C)OVA","group means","g1","exact"
+"manova","stats","MAN(C)OVA","group means","g1_on_y1","exact"
+"lm","stats","linear regression","regression coefficients","x1","exact"
+,,"multivariate regression","regression coefficients","x1_on_y1","exact"
+,,,"measures of association","y1_with_y2","exact"
+,,,"meas. of assoc. in group","y1_with_y2_in_g1","exact"
+"lmer","lme4","random intercept","group specific","g1","exact"
+,,"model","intraclass correlations",,
+"hetcor","polycor","correlation analysis","measures of association","y1_with_y2","approx."
+"glm","stats","generalized linear model","regression coefficients","x1","approx."
+"coxph,","survival","survival analysis","regression coefficients","x1","approx."
+"survreg",,,,,
+"polr","MASS","ordinal regression","regression coefficients","x1","approx."
+"zeroinfl","pscl","zero-inflated","regression coefficients","x1","approx."
+,,"regression models",,,
+
