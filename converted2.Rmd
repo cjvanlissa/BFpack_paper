@@ -80,7 +80,6 @@ classoption       : "man"
 knitr::opts_chunk$set(echo = TRUE)
 library(papaja)
 library(knitr)
-library(motley)
 library(BFpack)
 ```
 
