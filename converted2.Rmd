@@ -22,6 +22,8 @@ author:
     affiliation   : "Utrecht University"
   - name          : "Marlyne Meijerink"
     affiliation   : "Tilburg University"
+  - name          : "Robbie van Aert"
+    affiliation   : "Tilburg University"
   - name          : "Janosch Menke"
     affiliation   : "Utrecht University"
   - name          : "Jean-Paul Fox"
@@ -54,7 +56,7 @@ affiliation:
     institution   : "University of Amsterdam"
 
 abstract: |
-  There has been a tremendous methodological development of Bayes factors for hypothesis testing in the social and behavioral sciences, and related fields. This development is due to the flexibility of the Bayes factor for testing multiple hypotheses simultaneously, the ability to test complex hypotheses involving equality as well as order constraints on the parameters of interest, and the interpretability of the outcome as the weight of evidence provided by the data in support of competing scientific theories. The available software tools for Bayesian hypothesis testing are still limited however. In this paper we present a new `R`-package called `BFpack` that contains functions for Bayes factor hypothesis testing for the many common testing problems. The software includes novel tools for (i) Bayesian exploratory testing (null vs positive vs negative effects), (ii) Bayesian confirmatory testing (competing hypotheses with equality and/or order constraints), (iii) testing parameters such as means, regression coefficients, measures of association, and variance components under multivariate normal linear models, generalized linear (mixed) models, and survival models, (iv) automatic prior specification, and (v) allows the analysis of data that includes missing values that are missing at random.
+  There has been a considerable methodological development of Bayes factors for hypothesis testing in the social and behavioral sciences, and related fields. This development is due to the flexibility of the Bayes factor for testing multiple hypotheses simultaneously, the ability to test complex hypotheses involving equality as well as order constraints on the parameters of interest, and the interpretability of the outcome as the weight of evidence provided by the data in support of competing scientific theories. The available software tools for Bayesian hypothesis testing are still limited however. In this paper we present a new `R`-package called `BFpack` that contains functions for Bayes factor hypothesis testing for the many common testing problems. The software includes novel tools for (i) Bayesian exploratory testing (null vs positive vs negative effects), (ii) Bayesian confirmatory testing (competing hypotheses with equality and/or order constraints), (iii) testing parameters such as means, regression coefficients, measures of association, and variance components under multivariate normal linear models, generalized linear (mixed) models, and survival models, (iv) automatic prior specification, and (v) allows the analysis of data that includes missing values that are missing at random.
   
   <!-- https://tinyurl.com/ybremelq -->
   
@@ -84,9 +86,9 @@ library(BFpack)
 ```
 
 
-# Applications\label{sect4}
+# Applications
 
-This section presents a variety of testing problems that can be executed using `BFpack`.
+This section presents a variety of testing problems that can be executed using `R` package `BFpack`.
 
 
 ## 1. Bayesian $t$ testing in medical research
@@ -687,15 +689,6 @@ H2: division>hierarchy>0
 H3: complement
 -->
 The Bayes factors and posterior probabilities reveal there is most evidence for $H_2$ (with a posterior probability of 0.913), followed by the complement hypothesis $H_3$ (with a posterior probability of 0.087), and finally hypothesis $H_1$ received a posterior probability of zero. This suggests that there is most support that working in the same division has a larger effect on information sharing than hierarchical similarity and that both effects are positive. There is still a probability of .087 that the complement may be true after observing the data. More data would be needed in order to draw more decisive conclusions.
-
-
-
-
-
-\section*{Acknowledgments}
-\begin{leftbar}
-The first author is supported by a Vidi grant from the Netherlands Organization of Scientific Research (NWO). Regarding the applications, Application 1 was provided by Xin Gu, Application 2 by Herbert Hoijtink, Application 3 by Florian B\"{o}ing-Messing, Application 4 by Andrew Tomarken, Application 5 by Anton Ollson Collentine, Application 6 by Andrew Tomarken, Application 7 by Jean-Paul Fox, and Application 8 by Marlyne Meijerink. 
-\end{leftbar}
 
 
 

@@ -390,6 +390,8 @@ Jheronimus Academy of Data Science<br><h4 class="author">Herbert Hoijtink</h4>
 <address class="author_afil">
 Utrecht University<br><h4 class="author">Marlyne Meijerink</h4>
 <address class="author_afil">
+Tilburg University<br><h4 class="author">Robbie van Aert</h4>
+<address class="author_afil">
 Tilburg University<br><h4 class="author">Janosch Menke</h4>
 <address class="author_afil">
 Utrecht University<br><h4 class="author">Jean-Paul Fox</h4>
@@ -402,7 +404,7 @@ University of Amsterdam<br><h4 class="author">Caspar van Lissa</h4>
 <address class="author_afil">
 Utrecht University<br><div class="abstract">
 <p class="abstract">Abstract</p>
-<p>There has been a tremendous methodological development of Bayes factors for hypothesis testing in the social and behavioral sciences, and related fields. This development is due to the flexibility of the Bayes factor for testing multiple hypotheses simultaneously, the ability to test complex hypotheses involving equality as well as order constraints on the parameters of interest, and the interpretability of the outcome as the weight of evidence provided by the data in support of competing scientific theories. The available software tools for Bayesian hypothesis testing are still limited however. In this paper we present a new <code>R</code>-package called <code>BFpack</code> that contains functions for Bayes factor hypothesis testing for the many common testing problems. The software includes novel tools for (i) Bayesian exploratory testing (null vs positive vs negative effects), (ii) Bayesian confirmatory testing (competing hypotheses with equality and/or order constraints), (iii) testing parameters such as means, regression coefficients, measures of association, and variance components under multivariate normal linear models, generalized linear (mixed) models, and survival models, (iv) automatic prior specification, and (v) allows the analysis of data that includes missing values that are missing at random.</p>
+<p>There has been a considerable methodological development of Bayes factors for hypothesis testing in the social and behavioral sciences, and related fields. This development is due to the flexibility of the Bayes factor for testing multiple hypotheses simultaneously, the ability to test complex hypotheses involving equality as well as order constraints on the parameters of interest, and the interpretability of the outcome as the weight of evidence provided by the data in support of competing scientific theories. The available software tools for Bayesian hypothesis testing are still limited however. In this paper we present a new <code>R</code>-package called <code>BFpack</code> that contains functions for Bayes factor hypothesis testing for the many common testing problems. The software includes novel tools for (i) Bayesian exploratory testing (null vs positive vs negative effects), (ii) Bayesian confirmatory testing (competing hypotheses with equality and/or order constraints), (iii) testing parameters such as means, regression coefficients, measures of association, and variance components under multivariate normal linear models, generalized linear (mixed) models, and survival models, (iv) automatic prior specification, and (v) allows the analysis of data that includes missing values that are missing at random.</p>
 <!-- https://tinyurl.com/ybremelq -->
 </div>
 
@@ -411,7 +413,7 @@ Utrecht University<br><div class="abstract">
 
 <div id="applications" class="section level1">
 <h1>Applications</h1>
-<p>This section presents a variety of testing problems that can be executed using <code>BFpack</code>.</p>
+<p>This section presents a variety of testing problems that can be executed using <code>R</code> package <code>BFpack</code>.</p>
 <div id="bayesian-t-testing-in-medical-research" class="section level2">
 <h2>1. Bayesian <span class="math inline">\(t\)</span> testing in medical research</h2>
 <p>The one-sample <span class="math inline">\(t\)</span> is one of the most popular tests in applied research for testing the mean <span class="math inline">\(\mu\)</span> in a normally distributed population, <span class="math inline">\(N(\mu,\sigma^2)\)</span>, where <span class="math inline">\(\sigma^2\)</span> is the unknown variance, which is a nuisance parameter here. %For a two-samples <span class="math inline">\(t\)</span> test the difference of the two means is of key interest, i.e., <span class="math inline">\(\mu_1-\mu_2\)</span>, where <span class="math inline">\(\mu_1\)</span> and <span class="math inline">\(\mu_2\)</span> denote the means of two normal populations, <span class="math inline">\(N(\mu_1,\sigma_1^2)\)</span> and <span class="math inline">\(N(\mu_2,\sigma_2^2)\)</span>, and <span class="math inline">\(\sigma^2_1\)</span> and <span class="math inline">\(\sigma^2_2\)</span> denote the unknown population variances which can equal or not depending on the context. The standard exploratory one-sample <span class="math inline">\(t\)</span> test in <code>BFpack</code> is <span class="math inline">\(H_1:\mu=\mu_0\)</span> versus <span class="math inline">\(H_2:\mu&lt;\mu_0\)</span> versus <span class="math inline">\(H_3:\mu&gt;\mu_0\)</span>, where <span class="math inline">\(\mu_0\)</span> is a pre-specified null value. Default Bayes factors are executed based on adjusted fractional Bayes methodology using a minimal fractional (e.g., <span class="math inline">\(\frac{2}{n}\)</span> for a one-sample <span class="math inline">\(t\)</span> test for a sample of size <span class="math inline">\(n\)</span>) and a default fractional prior that is centered around the null value <span class="math inline">\(\mu_0\)</span>. For technical details about the methodology, we refer the interested reader to Section A.1.</p>
@@ -860,7 +862,6 @@ H1: division=hierarchy>0
 H2: division>hierarchy>0
 H3: complement
 --> The Bayes factors and posterior probabilities reveal there is most evidence for <span class="math inline">\(H_2\)</span> (with a posterior probability of 0.913), followed by the complement hypothesis <span class="math inline">\(H_3\)</span> (with a posterior probability of 0.087), and finally hypothesis <span class="math inline">\(H_1\)</span> received a posterior probability of zero. This suggests that there is most support that working in the same division has a larger effect on information sharing than hierarchical similarity and that both effects are positive. There is still a probability of .087 that the complement may be true after observing the data. More data would be needed in order to draw more decisive conclusions.</p>
-
 
 </div>
 </div>
