@@ -1,5 +1,5 @@
 ---
-title             : "`BFpack`: Flexible Bayes Factor Testing of Scientific Theories in `R`"
+title             : "`BFpack`: Flexible Bayes Factor Testing of Scientific Theories in `R` (Applications Only)"
 shorttitle        : "Bayesian Hypothesis Testing using `BFpack`"
 
 author: 
@@ -8,6 +8,8 @@ author:
     corresponding : yes    # Define only one corresponding author
     address       : "Postal address"
     email         : "j.mulder3@tilburguniversity.edu"
+  - name          : "Donald R. Williams"
+    affiliation   : "UC Davis" 
   - name          : "Xin Gu"
     affiliation   : "East China Normal University"
   - name          : "Anton Olsson-Collentine"
@@ -20,8 +22,6 @@ author:
     affiliation   : "Utrecht University"
   - name          : "Marlyne Meijerink"
     affiliation   : "Tilburg University"
-  - name          : "Donald R. Williams"
-    affiliation   : "UC Davis"      
   - name          : "Janosch Menke"
     affiliation   : "Utrecht University"
   - name          : "Jean-Paul Fox"
@@ -83,194 +83,19 @@ library(knitr)
 library(BFpack)
 ```
 
-# Introduction
 
-This paper presents a software package called `BFpack` which can be used for computing Bayes factors and posterior probabilities for statistical hypotheses in common testing problems in the social and behavioral sciences, medical research, and in related fields. This new package is an answer to the increasing interest of the scientific community to test statistical hypotheses using Bayes factors in the software environment `R` [@Rdevelopment]. Bayes factors enjoy many useful practical and theoretical properties which are not generally shared by classical significance tests. This includes its intuitive interpretation as the relative evidence in the data between two hypotheses, its ability to simultaneously test multiple hypotheses which may contain equality as well as order constraints on the parameters of interest, and its consistent behavior which implies that the true hypothesis will be selected with probability one as the sample size grows. The interested reader is referred to the many important contributions including (but not limited to) @Jeffreys; @Berger1987; @Sellke2001; @Wagenmakers2007; @Rouder2009; @Masson2011; @Hoijtink2011; @Wagenmakers2018; @Hoijtink2019, and the references therein. This has resulted in an increasing literature where Bayes factors have been used for testing scientific expectations [@VanWell2008; @Schoot2011c; @Braeken2015; @Vrinten2016; @vanSchie2016; @MulderWagenmakers2016; @Hoijtink2017; @DeJong2017; @Gronau2017; @Schonbrodt2017; @Wagenmakers2017b; @Raavenswaaij2019; @Flore2019; @Digge2019; @Zondervan2019].
-
-The Bayes factors that are implemented in `BFpack` are based on recent developments of Bayesian hypothesis testing of location parameters, such as (adjusted) means, regression coefficients, and other location parameters [@Mulder2019; @Gu2019; @Gu2017; @Mulder2014b], variance components, such as group variances and intraclass correlations [@BoingMessing2017; @MulderFox2019], and measures of association, [@Mulder2016; @MulderGelissen2019]. The package allows users to perform (i) exploratory Bayesian tests of whether a model parameter equals zero, is negative, or is positive, and (ii) confirmatory Bayesian tests where users specify a set of competing hypotheses with equality and/or order constraints on the parameters of interest. This will allow users to test their scientific expectations in a direct manner. Thus by providing Bayesian statistical tests for multiple hypotheses with equality as well as order constraints, `BFpack` makes important contributions to existing software packages, such as `lmtest` [@Hothorn2019] and `car` [@Fox2019], which contain functions for classical significance tests of a single equality constrained null hypothesis via  `lmtest::coeftest()` and `car::linearHypothesis()`, for example.
-
-To ensure a simple and user-friendly experience, the different Bayes factors tests are implemented via a single function called `BF`, which is the workhorse of the package. The function needs a fitted modeling object obtained from a standard `R` analysis (e.g., `lm`, `glm`; see Table \@ref(tab:tableest) for a complete overview), and in the case of a confirmatory test a string that specifies a set of competing hypotheses (example hypotheses are provided in Table \@ref(tab:tablehyp)). Another optional argument is the specification of the prior probabilities for the hypotheses. By building on these traditional statistical analyses, which are well-established by the `R` community, we present users additional statistics measures which cannot be obtained under a frequentist framework, such as default measures of the relative evidence in the data between competing statistical hypotheses as quantified by the Bayes factor.
-
-When testing hypotheses using the Bayes factor, the use of arbitrary or ad hoc priors should generally be avoided [@Lindley1957; @Jeffreys; @Bartlett1957; @Berger2001]. Therefore the implemented tests in `BFpack` are based on default Bayes factor methodology. Default Bayes factors can be computed without requiring external prior knowledge about the magnitude of the parameters. The motivation is that, even in the case prior information is available, formulating informative priors which accurately reflect one's prior beliefs under all separate hypotheses under investigation is a very challenging and time-consuming endeavor [@Berger2006].
-
-Different default Bayes factors with default priors are implemented for testing different types of parameters, such as location parameters (e.g., means or regression coefficients in univariate/multivariate normal linear models), measures of association (e.g., correlations in multivariate normal distributions), and variance components (e.g., group variances, intraclass correlations). For testing unbounded parameters, such as location parameters and group variances, adjusted fractional Bayes factors [@OHagan1995; @Mulder2014b; @BoingMessing2017] have been implemented. These Bayes factors have analytic expressions and are therefore easy to compute. For testing bounded parameters, such as measures of association and intraclass correlations, proper uniform priors are implemented. When testing intraclass correlations under random intercept models, a novel marginal modeling approach is employed where the random effects are integrated out [@MulderFox2019; @Fox2017; @MulderFox2013]. On the one hand, these tests can be used for testing hypotheses on intraclass correlations based on substantive considerations, and on the other hand, the tests can be used as a tool when building multilevel models as the marginal model approach provides a more general framework for testing covariance structures than regular mixed effects models.
-
-To also facilitate the use of Bayes factors for more general testing problems, an approximate Bayes factor is also implemented which is based on a large sample approximation resulting in an approximate Gaussian posterior distribution. The approximate Bayes factor only requires the (classical) estimates of the parameters that are tested, the corresponding error covariance matrix, and the sample size of the data that was used to get the estimates and covariance matrix. The resulting approximated Bayes factor can be viewed as a Bayesian counterpart of the classical Wald test. This makes the approximate Bayes factor very useful as a general test for statistical hypotheses. Note that even though it is possible to also use the approximate Bayes factor for the testing problems for which exact tailor-made Bayes factors are available in `BFpack`, we recommend to use the exact tailored Bayes factors if they are available. The reason is that the exact Bayes factors result in exact quantification of the evidence between statistical hypotheses instead of an approximate quantification of the evidence. Further note that because the sample size is also required to perform the approximate Bayes factor test, `BF()` cannot be applied directly on the output of classical testing function such as `lmtest::coeftest()`. In Section 4.5 we show how to do this with one additional step. Table 1 shows for which models an exact Bayes factor is implemented and which make use of the approximation.
-
-Before presenting the statistical methodology and functionality of `BFpack` it is important to understand what `BFpack` adds to the currently available software packages for Bayes factor testing. First, the `R` package `BayesFactor` [@BayesFactor] mainly focuses on precise and interval null hypotheses of single parameters in Student $t$ tests, anova designs, and regression models. It is not designed for testing more complex relationship between multiple parameters. Second, the package `BIEMS` [@Mulder2012], which comes with a user interface for `Windows`, can be used for testing various equality and order hypotheses under the multivariate normal linear model. The computation of the Bayes factors however is too slow for general usage when simultaneously testing many equality constraints as equality constraints are approximated with interval constraints that are made sufficiently small using a computationally intensive step-wise algorithm. Third, the `bain` package [@bain] computes approximated default Bayes factors by assuming normality of the posterior and a default prior. The package has shown good performance for challenging testing problems such as structural equation models. `BFpack` package also builds on some of the functionality of `bain` in more complex statistical models. Unlike `bain` however, the implementation in `BFpack` builds on existing `R` functions such as `dmvnorm` or `pmvnorm` from the `mvtnorm` package [@Genz2016] instead of calling external `Fortran` subroutines. This results in Bayes factors that essentially have zero Monte Carlo errors. Furthermore it is important to note that the Gaussian nature of the default prior in `bain` may not appropriate when testing bounded parameters, for example, such as measures of association or intraclass correlations, or when the Gaussian approximation of the posterior would be too crude, such as when testing group variances in the case of small sample sizes. Finally the free statistical software environment `JASP` [@JASP2018], which has contributed tremendously to the use of Bayes factors in psychological research and other research fields, is specifically designed for non-`R` users by providing a user-friendly graphical user-interface similar to `SPSS`. The Bayes factors implemented in `JASP` rely on other packages such as `BayesFactor` and `bain`. `BFpack` on the other hand is developed to give R users a flexible tool for testing a very broad class of hypotheses involving equality and/or order constraints on various types of parameters (means, regression coefficients, variance components, and measures of association) under common statistical models by building on standard R functions.
-
-The paper is organized as follows. Section 2 describes the key aspects of the Bayes factor methodology that is implemented in `BFpack`. This section separately describes Bayes factors for location parameters, for measures of association, and for variance components. Section 3 gives a general explanation how the main function `BF` should be used. Section 4 presents 8 different applications of the methodology and software for a variety of testing problems. The paper ends with some concluding remarks in Section 5.
-
-```{r, tableest, echo = FALSE, results = "asis"}
-#tab <- read.csv("c:/tmp/paper BFpack/table1.csv")
-tab <- read.csv("/Users/jorismulder/surfdrive/paper BFpack/BFpack paper Github/BFpack_paper/table1.csv")
-tab <- as.matrix(tab)
-papaja::apa_table(tab, note = "R functions, packages, descriptions of tests, parameter of interest, and example name of the parameter that is tested, and the classification whether it is an exact or approximate Bayes factor test. For this table we assume that 'y1' is the label of an outcome variable, 'x1' is the label of a numeric predictor variable, and 'g1' is the label of a level of a grouping (factor) variable. The actual names that are used depend on the names of the variables in the model.", escape =TRUE)
-```
-
- ```{r, tablehyp, results = "asis"}
- papaja::apa_table(read.csv("/Users/jorismulder/surfdrive/paper BFpack/BFpack paper Github/BFpack_paper/table2.csv"), caption =  "Example hypothesis tests that can be executed using `BFpack`.")
- ```
-
-
-# Technical background of the default Bayes factors\label{sect2}
-The general form of the hypotheses that can be tested using `BFpack` consists a set of linear equality constraints and a set of linear order constraints on the vector of model parameters, denoted by $\theta$ of size $P$, i.e.,
-\begin{equation}
-H_t:\textbf{R}^E\boldsymbol\theta=\textbf{r}^E~\&~\textbf{R}^O\boldsymbol\theta>\textbf{r}^O,
-\label{Ht1}
-\end{equation}
-where $[\textbf{R}^E|\textbf{r}^E]$ is a $q^E\times P$ augmented matrix specifying the equality constraints and $[\textbf{R}^O|\textbf{r}^O]$ is a $q^O\times P$ augmented matrix specifying the order constraints. A hypothesis index is omitted to keep the notation simple. In the case that $\textbf{R}^{O}$ is of full row rank (which is most often the case), a parameter transformation can be applied according to
-\begin{equation}
-\left[\begin{array}{c}
-\boldsymbol\theta^E\\ \boldsymbol\theta^O\\ \boldsymbol\phi
-\end{array}\right]=\textbf{T}\boldsymbol\theta=\left[\begin{array}{c}
-\textbf{R}^E\\ \textbf{R}^O \\ \textbf{D}
-\end{array}\right]\boldsymbol\theta,
-\end{equation}
-where the $q^E$ equality restricted parameters equal $\boldsymbol\theta^E=\textbf{R}^E\boldsymbol\theta$, the $q^O$ order-restricted parameters equal $\boldsymbol\theta^O=\textbf{R}^E\boldsymbol\theta$, and the $P-q^O-q^E$ nuisance parameters equal $\boldsymbol\phi=\textbf{D}\boldsymbol\theta$, where the $(P-q^E-q^O)\times P$ dummy matrix $\textbf{D}$ is chosen such that the transformation is one-to-one. Subsequently the hypothesis can equivalently be formulated as
-\begin{equation}
-H_t:\boldsymbol\theta^E=\textbf{r}^E~\&~\boldsymbol\theta^O>\textbf{r}^O,
-\label{Ht2}
-\end{equation}
-where the nuisance parameters $\boldsymbol\phi$ are omitted. Note that for most order hypotheses, the matrix $\textbf{R}^{O}$ will be of full row rank. For example, $H_t:\theta_1>\theta_2>\theta_3$ implies that $[\textbf{R}^O|\textbf{r}^O]=\left[\begin{array}{ccc|c}1&-1&0&0 \\ 0&1& -1& 0\end{array}\right]$. Therefore we will work with the formulation in Equation \ref{Ht2} throughout this paper to keep the notation simple. In the case $\textbf{R}^{O}$ is not of full row rank, which is for instance the case for $H_t:(\theta_1,\theta_2)>(\theta_3,\theta_4)$, a similar type of formulation of $H_t$ can be produced as in Equation \ref{Ht2}\footnote{If $\textbf{R}^{O}$ is not of full row rank, then Equation \ref{Ht2} would become $H_t:\boldsymbol\theta^E=\textbf{r}^E ~\&~ \tilde{\textbf{R}}^O\boldsymbol\theta^O>\tilde{\textbf{r}}^O$, where $\tilde{\textbf{R}}^O=\textbf{R}^O\tilde{\textbf{D}}^{-1}$, where the $(P-q^E)\times P$ matrix $\tilde{\textbf{D}}$ consists of the unique rows of $\textbf{I}_P-\textbf{R}^{E^{\top}}(\textbf{R}^E\textbf{R}^{E^{\top}})^{-1}\textbf{R}^E$, and $\tilde{\textbf{r}}^O=\textbf{r}^O-\textbf{R}^O[\textbf{R}^{E}]^{-1}\textbf{r}^E$, where (generalized) Moore-Penrose inverses are used for the non square matrices.}.
-Next we specify a prior for the free (possibly order constrained) parameters under $H_t$, denoted by $\pi_t$, by truncating an unconstrained prior, $\pi_u$, that is specified under an unconstrained alternative model, 
-\begin{equation}
-\pi_t(\boldsymbol\theta^O,\boldsymbol\phi) = \pi_u(\boldsymbol\theta^O,\boldsymbol\phi|\boldsymbol\theta^E=\textbf{r}^E) \times \pi_u(\boldsymbol\theta^E=\textbf{r}^E)^{-1}\times P(\boldsymbol\theta^O>\textbf{r}^O|\boldsymbol\theta^E=\textbf{r}^E)^{-1}\times I(\boldsymbol\theta^O>\textbf{r}^O),
-\label{truncprior}
-\end{equation}
-where $I(\cdot)$ denotes the indicator function. Using this pair of priors under the constrained hypothesis $H_t$ and the unconstrained alternative hypothesis, we can write the Bayes factor of $H_t$ against $H_u$ as
-\begin{equation}
-B_{tu} = \frac{\pi_u(\boldsymbol\theta^E=\textbf{r}^E|\textbf{Y})}{\pi_u(\boldsymbol\theta^E=\textbf{r}^E)}\times \frac{P_u(\boldsymbol\theta^O>\textbf{r}^O|\boldsymbol\theta^E=\textbf{r}^E,\textbf{Y})}{P_u(\boldsymbol\theta^O>\textbf{r}^O|\boldsymbol\theta^E=\textbf{r}^E)},
-\label{Btu}
-\end{equation}
-where the first factor is ratio of posterior and prior densities of $\boldsymbol\theta$ evaluated at a constant vector $\textbf{R}^E$, which can be viewed as a multivariate Savage-Dickey density ratio [@Dickey1971; @Wetzels2010; @Mulder2010], and the second factor is a ratio of conditional posterior and prior probabilities that the order constraints hold conditional on the equality constraints. We shall refer to Equation \ref{Btu} as the extended Savage-Dickey density ratio. Different variations have been reported in the literature of this simple expression of the Bayes factor including @Klugkist2005, @Pericchi2008, @Mulder2010, @Gu2017, among others. The expression can simply be computed when the marginal and conditional posterior and priors belong to known probability distributions (examples will be given later), and thus direct computation of the marginal likelihood, which can be a challenging problem, can be avoided. The four different statistical measures in Equation \ref{Btu} have the following intuitive interpretations:
-
-\begin{itemize}
-\item The marginal posterior density evaluated at $\boldsymbol\theta^E=\textbf{r}^E$ (numerator of first factor) is a measure of the \textit{relative fit of the equality constraints} of $H_t$ relative to $H_u$ as a large (small) posterior value under the unconstrained model indicates that there is evidence in the data that $\boldsymbol\theta^E$ is (not) close to $\textbf{r}^E$.
-\item The conditional posterior probability of $\boldsymbol\theta^O>\textbf{r}^O$ given $\boldsymbol\theta^E=\textbf{r}^E$ (numerator of second factor) is a measure of the \textit{relative fit of the order constraints} of $H_t$ relative to $H_u$ as a large (small) probability under the unconstrained model indicates that there is evidence in the data that the order constraints (do not) hold.
-\item The marginal prior density evaluated at $\boldsymbol\theta^E=\textbf{r}^E$ (denominator of first factor) is a measure of the \textit{relative complexity of the equality constraints} of $H_t$ relative to $H_u$ as a large (small) prior value indicates that the prior for $\boldsymbol\theta^E$ is (not) concentrated around $\textbf{r}^E$, and thus there is little (big) difference between the precise formulation $\boldsymbol\theta^E=\textbf{r}^E$ or the unconstrained formulation $H_u$.
-\item The conditional prior probability of $\boldsymbol\theta^O>\textbf{r}^O$ given $\boldsymbol\theta^E=\textbf{r}^E$ (denominator of second factor) is a measure of the \textit{relative complexity of the order constraints} of $H_t$ relative to $H_u$ as a large (small) probability under the unconstrained model indicates that the order constrained subspace under $H_t$ is relatively large (small), indicating that the constrained model is complex (simple).
-\end{itemize}
-
-It is important to note that by conditioning on $\boldsymbol\theta^E=\textbf{r}^E$ in Equation \ref{truncprior}, we make specific assumptions about the prior of the free parameters under $H_t$ in relation to the unconstrained prior [@Verdinelli1995; @Marin2010], and therefore the expression should be used with some care [for an interesting discussion on this topic, see @Consonni2008]. Below we provide examples of Bayes factors that can and Bayes factors that cannot be expressed as an extended Savage-Dickey density ratio.
-
-## Testing location parameters
-
-Many common testing problems in statistical science involve testing of location parameters that determine the `location' or `shift' of the distribution of the data. Examples of location parameters are means, regression coefficients, or factor loadings. These parameters are unbounded for which flat improper priors are specified under an objective Bayesian estimation framework, i.e., $\pi_u(\boldsymbol\theta)\propto 1$.
-Fractional Bayes methodology is an effective framework for testing location parameters. Informative (subjective) prior specification is avoided by splitting the data in a minimal fraction that is used for updating a noninformative improper prior to a proper default prior and a maximal fraction that is used for hypothesis testing [@OHagan1995; @DeSantis1999]. Despite the various useful properties of fractional Bayes factors [e.g., consistency, coherence when testing multiple hypotheses, invariance to transformations of the data, @OHagan1997], an adjustment was needed in order for the fractional Bayes factor to function as an Occam's razor when testing order hypotheses [@Mulder2014b; @MulderOlsson2019]. This is achieved by shifting the default prior to the boundary of the constrained space\footnote{When testing a constrained hypothesis of the form of Equation \ref{Ht2}, the default prior is centered on the boundary which implies that the prior is centered around $\boldsymbol\theta_0$ with $\textbf{R}^E\boldsymbol\theta_0=\textbf{r}^E$ and $\textbf{R}^O\boldsymbol\theta_0=\textbf{r}^O$.}. In the simple case when testing $\theta<0$ versus $\theta>0$, the default prior would be centered at 0 (instead of around the MLE) so that the prior probabilities of $\theta<0$ and $\theta>0$ under the unconstrained model are equal to 0.5, which suggests that a negative effect is equally likely as a positive effect. Centering the unconstrained prior to the boundary also resulted in desirable testing behavior of order hypotheses when using intrinsic Bayes factors [@Mulder2010; @Mulder2014a] and when using the BIC [@MulderRaftery2019]
-Interestingly when testing location parameters with flat improper priors, the adjusted fractional Bayes factor (and the fractional Bayes factor as well) of $H_t$ against $H_u$ can be expressed as an extended Savage-Dickey density ratio as in Equation \ref{Ht2}, i.e.,
-\begin{equation}
-B_{tu}^F = \frac{\pi_u(\boldsymbol\theta^E=\textbf{r}^E|\textbf{Y})}{\pi_u^*(\boldsymbol\theta^E=\textbf{r}^E|\textbf{Y}^b)}\times \frac{P_u(\boldsymbol\theta^O>\textbf{r}^O|\boldsymbol\theta^E=\textbf{r}^E,\textbf{Y})}{P_u^*(\boldsymbol\theta^O>\textbf{r}^O|\boldsymbol\theta^E=\textbf{r}^E,\textbf{Y}^b)},
-\label{FBFtu}
-\end{equation}
-where the distributions conditional on $\textbf{Y}^b$ in the denominator denote the unconstrained default priors that contain a minimal fraction $b$ of the complete data $\textbf{Y}$, and the asterisk ($^*$) denotes the default prior adjustment. When the data contains information from different groups and the sample sizes highly varies across groups, it is generally recommended to use group specific fractions to properly control the amount of prior information from each group [@DeSantis2001; @Hoijtink2018]. 
-
-### Univariate/multivariate normal linear models
-
-Recently, [@Mulder2019] derived the adjusted fractional Bayes factor for testing hypotheses under the multivariate normal linear model with multiple groups. Under this model the unconstrained posterior of the matrix of location parameters follows a matrix Student $t$ distribution, and the unconstrained default prior has a matrix Cauchy distribution, i.e.,
-\begin{equation}
-B_{tu}^F = \frac{\mathcal{T}(\boldsymbol\theta^E=\textbf{r}^E|\textbf{Y})}{\mathcal{C}(\boldsymbol\theta^E=\textbf{r}^E|\textbf{Y}^{\textbf{b}})}\times \frac{\mathcal{T}(\boldsymbol\theta^O>\textbf{r}^O|\boldsymbol\theta^E=\textbf{r}^E,\textbf{Y})}{\mathcal{C}(\boldsymbol\theta^O>\textbf{r}^O|\boldsymbol\theta^E=\textbf{r}^E,\textbf{Y}^{\textbf{b}})},
-\label{FBFtuMVN}
-\end{equation}
-where the $\mathcal{T}_u$ and $\mathcal{C}_u$ denote the unconstrained matrix Student $t$ and matrix Cauchy distribution, respectively, and $\textbf{b}$ denotes a vector of minimal fractions that are group specific.
-Under these matrix-variate distributions, the posterior and prior densities at $\textbf{r}^E$, and the conditional posterior and prior probabilities that the order constraints hold do not have analytic expressions. In `BFpack`, these quantities are computed using Monte Carlo integration. We use the fact that draws from a matrix Student $t$ and matrix Cauchy distribution can be obtained by first sampling a covariance matrix from an inverse Wishart distribution, and subsequently drawing the matrix of location parameters from its respective matrix Gaussian distribution conditional on the drawn covariance matrix [@BoxTiao]. Therefore, the posterior density evaluated at $\boldsymbol\theta^E=\textbf{r}^E$ can be obtained by repeatedly drawing covariance matrices from its marginal posterior, and subsequently, computing the posterior density as the arithmetic average of the Gaussian densities evaluated at $\boldsymbol\theta^E=\textbf{r}^E$, which have analytic expressions. The Gaussian densities are computed using the `dmvnorm` function from the `mvtnorm` package [@Genz2016]. Such a procedure is also implemented to obtain the prior density, and the conditional prior and posterior probabilities. The Gaussian probabilities are obtained using the `pmvnorm` function from the `mvtnorm` package.
-In case the constraints are formulated only on the effects belonging to the same dependent variable, or only on the effects belonging to the same independent (predictor) variable, the marginal and conditional distributions for the unconstrained parameters follow multivariate Student $t$ distributions. The respective measures of relative complexity and fit then have analytic expressions which are efficiently computed using `dmvt` and `pmvt` (`mvtnorm` package) in `BFpack`. Finally note that fractional Bayes factors between the constrained hypotheses using the coherence property of the Bayes factor, i.e., $B_{12}=B_{1u}/B_{2u}$.
-This Bayes factor test is executed when the data are fitted using the `R` functions `t_test`, `lm`, `aov`, and `manova`. Note that the usual $t$ test function in `R`, `t.test`, cannot be used because the output (of class `htest`) does not contain the observed sample means and sample variances of the two groups which are needed for the computation of the Bayes factors. For this reason, the equivalent function `t_test` was used (from the `bain` package) which contains the sample means and variances in addition to the standard output of `t.test`.
-
-### General statistical models
-
-Under more complex statistical models where the four quantities in Equation \ref{FBFtu} do not have analytic expressions or when they cannot be computed efficiently via Monte Carlo estimation, an approximation of the adjusted fractional Bayes factor can be used [@Gu2017; @Gu2019]. This approximation relies on large sample theory where the unconstrained posterior and default prior are approximated with Gaussian distributions. As such this approximate default Bayes factor can be viewed as a Bayesian counterpart of the classical Wald test.
-
-First the nuisance parameters are integrated out to yield the marginal posterior for $(\boldsymbol\theta^E,\boldsymbol\theta^O)$. Following large sample theory [Ch. 4 @Gelman2014], this posterior can then be approximated with a multivariate Gaussian distribution using the MLE and error covariance matrix. The approximated Gaussian posteriors can then be used to get estimates of the posterior quantities in the numerators in Equation \ref{FBFtu}. The corresponding default prior for $(\boldsymbol\theta^E,\boldsymbol\theta^O)$ is obtained by raising the posterior to a minimal fraction $b$, which results in a multivariate Gaussian distribution where the error covariance matrix is multiplied with the reciprocal of the minimal fraction, and the mean is shifted towards the boundary of the constrained space. This default Bayes factor can then be written as
-\begin{equation}
-B^F_{tu} = \frac{\mathcal{N}(\boldsymbol\theta^E=\textbf{r}^E|\textbf{Y})}{\mathcal{N}(\boldsymbol\theta^E=\textbf{r}^E|\textbf{Y}^b)}\times \frac{\mathcal{N}(\boldsymbol\theta^O>\textbf{r}^O|\boldsymbol\theta^E=\textbf{r}^E,\textbf{Y})}{\mathcal{N}(\boldsymbol\theta^O>\textbf{r}^O|\boldsymbol\theta^E=\textbf{r}^E,\textbf{Y}^b)},
-\label{FBFtuBain}
-\end{equation}
-where $\mathcal{N}$ denotes an unconstrained multivariate (or matrix-variate) normal distribution. In `BFpack` the posterior and prior densities, and posterior and prior probabilities are directly computed using `dmvnorm` and `pmvnorm` functions from the `mvtnorm` package, respectively. In the case the matrix of order constraints is not of full row rank, `pmvnorm` cannot be used for computing the needed probabilities. In this special case the `bain` function is called from the `bain` package.
-
-Hence, in order to compute the approximated Bayes factor in Equation \ref{FBFtuBain} only the MLEs, the error covariance matrix, and the sample size are needed. The minimal fraction is then set equal to the number of constraints that are tested divided by the sample size [@Gu2019]. These three elements can simply be extracted from fitted model objects obtained using other packages in `R`. Currently `BFpack` supports objects of class `glm`, `coxph`, `polr`, `survreg`, and `zeroinfl`. When executing `BF()` on an object of these classes, the function `BF.default` is called which extracts the estimates, the error covariance matrix, and the sample size from the fitted model object to compute Equation \ref{FBFtuBain} for the hypotheses of interest. Thus, this Bayes factor can easily be used for testing hypotheses under other model classes by applying the function `BF()` to a named vector with the estimates, its corresponding error covariance matrix, and the sample size.
-
-
-## Testing measures of association
-
-Correlation coefficients and other measures of association play a central role in applied research to quantify the strength of the linear relationship between two variables, possibly controlling for other variables. Measures of association abide two conditions. First they are bounded between -1 and 1, and second they lie in a correlation matrix which must be positive definite. The second condition implies that a correlations need to satisfy a complex set of constraints [e.g., @Rousseeuw1994]. The volume of this subspace for increasing dimensions of the correlation matrix was explored by @Joe2006.
-As measures of association are bounded, fractional Bayes methodology is not needed as the noninformative joint uniform prior for the correlations in the correlation matrix is already proper, and thus a regular default Bayes factor can be computed. This was also recommended by @Jeffreys1935. This joint uniform prior assumes that any configuration of correlations that results in a positive definite correlation matrix is equally likely a priori. Equivalently, proper uniform priors can be formulated for the measures of association under the constrained hypotheses under investigation. It is easy to show that this proper uniform prior under $H_t$ can be written as a truncation of the unconstrained joint uniform prior as in Equation \ref{truncprior}, and therefore, the Bayes factor of constrained hypothesis against an unconstrained alternative can be expressed as an extended Savage-Dickey density ratio in Equation \ref{Btu}, where the unconstrained prior in the denominator is the joint uniform prior and the unconstrained posterior is proportional to the likelihood and this uniform prior [@MulderGelissen2019]. Furthermore as was shown by @Mulder2016 the unconstrained posterior for the measures of association can be well approximated with a multivariate normal distribution after a Fisher transformation of the parameters. This can be explained by the fact that the sample correlation and the population correlation have a similar role in the likelihood [@Johnson1970], and therefore approximate normality is achieved for the posterior when using a noninformative prior such as the employed joint uniform prior. The Bayes factor on measures of association that is implement in `BFpack` can therefore be written as\footnote{Note there is a slight abuse of notation in Equation \ref{BFtuCor} as both the numerator and denominator for $\boldsymbol\theta$ have to lie on the same scale to avoid the Borel-Kolmogorov paradox [@Wetzels2010]. In the computation in `BFpack`, the numerator and denominator are either both computed under the Fisher transformed space or under the untransformed space depending on the test.}
-\begin{equation}
-B_{tu} = \frac{\mathcal{N}(\boldsymbol\theta^E=\textbf{r}^E|\textbf{Y})}{\mathcal{U}(\boldsymbol\theta^E=\textbf{r}^E)}\times \frac{\mathcal{N}(\boldsymbol\theta^O>\textbf{r}^O|\boldsymbol\theta^E=\textbf{r}^E,\textbf{Y})}{\mathcal{U}(\boldsymbol\theta^O>\textbf{r}^O|\boldsymbol\theta^E=\textbf{r}^E)},
-\label{BFtuCor}
-\end{equation}
-To obtain the prior measures for relative complexity, numerical estimates can be obtained by approximating the joint prior using unconstrained draws, from which the prior density and probability can simply be computed using the number of draws satisfying the constraints. In `BFpack` this is done by calling `Fortran 90` subroutines from `R`. %The multivariate posterior density for the measures of association can be well approximated using a multivariate normal distribution on the Fisher transformed space. This approximation will be sufficiently accurate due to the unconstrained joint uniform prior that is used for the measures of association and the noninformative priors for the nuisance parameters.
-This Bayes factor test can be executed when the fitted model is a multivariate linear regression model (so that the fitted object is of class `mlm`). %and the argument `prior=correlation` is set (more detail is provided in Sections \ref{usage} and \ref{applications}.
-Furthermore, an approximation of the Bayes factor is obtained when the fitted model object is obtained using the `R` function `hetcor` [from the `polycor` package; @polycor2016]. The mean vector and covariance matrix of the approximately multivariate normal posterior for the measures of association are obtained by extracting the estimates and standard errors from the `hetcor` object.
-
-## Testing variance components\label{SectionVariances}
-
-### Testing group variances
-
-Testing the heterogeneity of group variances plays a central role in psychological science and related fields. A default Bayes factor for testing equality and order hypotheses was developed by [@BoingMessing2017] using adjusted fractional Bayes methodology. As variance parameters belong to the family of scale parameters, a scale adjustment is needed to obtain a default Bayes factor that functions as an Occam's razor for order hypotheses on variances [instead of a location shift as for location parameters, see @BoeingMessing2016; @BoeingMessing2018]. Because the noninformative independence Jeffreys prior for group variances across competing equality constrained hypotheses does not satisfy Equation \ref{truncprior}, the fractional Bayes factor for the equality part (i.e., the first factor in Equation \ref{Ht2}) cannot be expressed as a Savage-Dickey density ratio but the ratio of (conditional) probabilities is present. The Bayes factor for the group variance test can be written as follows
-\begin{equation}
-B^F_{tu} = B^F_{t'u} \times \frac{\mathcal{IG}(\boldsymbol\theta^O>\textbf{r}^O|\boldsymbol\theta^E=\textbf{r}^E,\textbf{Y})}{\mathcal{IG}(\boldsymbol\theta^O>\textbf{r}^O|\boldsymbol\theta^E=\textbf{r}^E,\textbf{Y}^b)},
-\label{FBFtuVar}
-\end{equation}
-where $B^F_{t'u}$ denotes the fractional Bayes factor of hypothesis $H_{t'}:\boldsymbol\theta^E=\textbf{r}^E$ [i.e., hypothesis $H_t$ where the order constraints are omitted, see also @Pericchi2008] against $H_u$, and $\mathcal{IG}$ denotes an unconstrained inverse gamma distribution. We refer the interested reader to [@BoingMessing2017] for the mathematical expressions and derivations.
-This Bayes factor test can be executed when the fitted model is obtained from the `R` function `bartlett_test`, designed for `BFpack`. This test is equivalent to the usual `bartlett.test` but the output object (of class `BF_bartlett`) also contains sample variances and sample sizes which are needed for computing the Bayes factors in Equation \ref{FBFtuVar}.
-
-### Testing between-cluster variances and intraclass correlations in mixed effects models
-
-The multilevel or mixed effects model is the gold standard for modeling hierarchically structured data. In the mixed effects model the within-clusters variability is separately modeled from the between-clusters variability. The intraclass correlation plays a central role as a measure of the relative degree of clustering in the data where an intraclass correlation close to 1 (0) indicates a very high (low) degree of clustering in the data.
-Despite the widespread usage of mixed effects models in the (applied) statistical literature, there are few statistical tests for testing variance components; exceptions include @Westfall1996; @Garcia2007; @Saville2009; @Thalmann2017. The complicating factor is that testing whether the between-cluster variance equals zero is a boundary problem. In `BFpack` a Bayes factor testing procedure is implemented for intraclass correlations (and random intercept variances) under a marginal modeling framework where the random effects are integrated out [@MulderFox2019; @Fox2017; @MulderFox2013]. Under the marginal model the intraclass correlations become covariance parameters which may attain negative values. This crucial step allows us to test the appropriateness of a random effects model using the posterior probability that an intraclass correlation is positive. The implemented Bayes factors make use of stretched uniform priors for the intraclass correlations in the interval $(-\frac{1}{p-1},1)$, where $p$ is the cluster size. This prior is equivalent to a shifted-$F$ prior on the between-cluster variances. Similar as when testing group variances, the equality part of the Bayes factor of a constrained hypothesis on the intraclass correlations against an unconstrained alternative cannot be expressed as a Savage-Dickey density ratio. The Bayes factor can be written as
-\begin{equation}
-B_{tu} = B_{t'u} \times \frac{\text{shifted-}\mathcal{F}(\boldsymbol\theta^O>\textbf{r}^O|\boldsymbol\theta^E=\textbf{r}^E,\textbf{Y})}{\text{shifted-}\mathcal{F}(\boldsymbol\theta^O>\textbf{r}^O|\boldsymbol\theta^E=\textbf{r}^E)},
-\label{BFtuICC}
-\end{equation}
-where $\text{shifted-}\mathcal{F}$ refers to the fact that the conditional draws for the between cluster variances are drawn from shifted-$F$ priors in the Gibbs sampler. The marginal likelihood is estimated using importance sampling; see @MulderFox2019 for the mathematical details.
-These Bayes factors can be used for testing the degree of clustering in the data (e.g., testing whether clustering is present among students from different schools), or for testing whether the degree of clustering varies across different cluster categories (e.g., testing the degree of clustering among students from private schools against the degree of clustering among students from public schools). To execute these tests, an object from the `lmer` function with random intercepts (which may be category specific) is needed. Currently `BFpack` only supports intraclass correlation testing in the case of equally sized clusters.
-
-## Bayes factor computation for data with missing observations
-
-Bayesian (and non-Bayesian) hypothesis testing in the case the data contains missing observations has not received a lot of attention in the literature. This is quite surprising as missing data are ubiquitous in statistical practice. If the data contain missing observations, listwise deletion is generally not recommended as this results in a loss of information and possible bias [@Rubin1987; @Rubin1996]. Multiple imputation is generally the recommended method in which many imputed data sets are randomly created using an imputation model. The analyses are then performed over all the imputed data sets, and averaged in a proper manner [@LittleRubin2002].
-In the case of model uncertainty, properly handling missing data may become increasingly complex as different imputation models need to be used for computing the marginal likelihoods under the different hypotheses. @Hoijtink2018b however showed that the computation can be considerably simplified for specific Bayes factors and testing problems. This is also the case for Bayes factors that can be expressed as the extended Savage-Dickey density ratio in Equation \ref{Btu}. The reason is that the four key quantities (i.e., the measures of relative fit and relative complexity for the equality and order constraints) are all computed under the same unconstrained model. Therefore we only need to get an unbiased estimate of the unconstrained posterior (and possibly unconstrained default prior in the case of a data-based prior), and use this to estimate the four key quantities. If we write a complete data matrix $\textbf{Y}$ as a data matrix which only contains the observations, $\textbf{Y}^o$, and a data matrix which only contain the missings as $\textbf{Y}^m$, the relative fit of the equality constraints can be computed as
-\begin{eqnarray*}
-\pi_u(\boldsymbol\theta^E=\textbf{r}^E|\textbf{Y}^o) &=& \int \pi_u(\boldsymbol\theta^E=\textbf{r}^E|\textbf{Y}^o,\textbf{Y}^m) \pi_u(\textbf{Y}^m|\textbf{Y}^o) d\textbf{Y}^m\\
-&\approx& M^{-1}\sum_{m=1}^M \pi_u(\boldsymbol\theta^E=\textbf{r}^E|\textbf{Y}^o,\textbf{Y}^{(m)}),
-\end{eqnarray*}
-where $\textbf{Y}^{(m)}$ is the $m$-th set of imputed missing observations given the observed data matrix $\textbf{Y}^o$, for $m=1,\ldots,M$. Similar expressions can be obtained for the other three measures. Section \ref{SectionMissing} illustrates how to compute Bayes factors and posterior probabilities via the output from `BFpack` in the presence of missing data using the imputation software of the `mice` package [@mice2019].
-
-# Bayes factor testing using the package\label{sect3}
-
-The Bayes factors described in the previous section can be executed by calling the function `BF`. The function has the following arguments:
-\begin{itemize}
-\item `x`, a fitted model object that is obtained using a `R`-function. An overview `R`-functions that are currently supported can be found in Table \ref{tabletest}.
-\item `hypothesis`, a string that specifies the hypotheses with equality and/or order constraints on the parameters of interest.
-\begin{itemize}
-\item The parameter names are based on the names of the estimated effects. Thus, if the coefficients in a fitted `lm` object have the names `weight`, `height`, and `length`, then the constraints in the `hypothesis` argument should be formulated on these names.
-\item Constraints within a hypothesis are separated with an ampersand ``\&`'. Hypotheses are separated using a semi-colon ``;`'. For example `hypothesis = "weight > height ``\&`` height > 0; weight = height = 0"` implies that the first hypothesis assumes that the effect of `weight` is larger than the effect of `height` and that the effects of `height` is positive, and the second hypothesis assumes that the two effects are equal to zero. Note that the first hypothesis could equivalently have been written as `weight > height > 0`.
-\item Brackets, ``(`' and ``)`', can be used to combine constraints of multiple hypotheses. For example `hypothesis = "(weight, height, length) > 0"` denotes a hypothesis where both the effects of `weight`, `height`, and `length` are positive. This could equivalently have been written as `hypothesis = "weight > 0 ``\&`` height > 0 `\&` length > 0"`.
-\item In the case the subspaces under the hypotheses do not cover the complete parameter space, a complement hypothesis is automatically added. For example, if an equality hypothesis and an order hypothesis are formulated, say, `hypothesis = "weight` `= height = length; weight > height >` `length"`, the `complement` hypothesis covers the remaining subspace where neither "`weight = height = `\\ `length`" holds, nor `"weight >` `height > length"` holds.
-\item In general we recommended not to specify order hypotheses that are nested, such as `hypothesis = "weight > height > length; weight > (height, ``length)"`,\\ where the first hypothesis (which assumes that the effect of `weight` is larger than the effect of `height`, and the effect of `height` is larger than the effect of `length`) is nested in the second hypothesis (which assumes that the effects of `weight` is largest but no constraints are specified between the effects of `height` and `length`). The reason is that the Bayes factor for the simpler hypothesis against the more complex hypothesis would be bounded. Therefore the scale of the Bayes factor would become more difficult to interpret, and the evidence could not accumulate to infinity for the true hypothesis if the true hypothesis would be the smaller order hypotheses [e.g., see @Mulder2010]. If however a researcher has theoretical reasons to formulate nested order hypotheses these can be formulated and tested using the `BF` function of course.
-\item The default setting is `hypothesis = NULL`, which only gives the output for exploratory tests of whether each parameter is zero, negative, or positive when assuming equal prior probabilities, e.g., `hypothesis = "weight = 0; weight < 0; weight > 0`, for the effect of `weight`. This exploratory tests is also executed when a confirmatory test is of interest via the `hypothesis` argument.
-\item When testing hypotheses on variance components (Section \ref{SectionVariances}), only simple constraints are allowed where a parameter is equal to, greater than, or smaller than another parameter. When testing intraclass correlations, the intraclass correlation can also be compared to 0 under a hypothesis.
-\end{itemize}
-\item `prior`, a numeric vector of prior probabilities of the hypotheses. The default setting is `prior = NULL` which specifies equal prior probabilities.
-\end{itemize}
-
-In the case the class of the fitted model `x` is not supported (Table 1), `BF.default()` is called which executes the approximate Bayes factor. In this case, the following (additional) arguments are required:
-\begin{itemize}
-\item `x`, a named numeric vector of the estimates (e.g., MLE) of the parameters of interest where the names are equal to the names of the parameters.
-\item `sigma`, the approximate posterior covariance matrix (e.g,. error covariance matrix) of the parameters of interest.
-\item `n`, the sample size that was used to acquire the estimates and covariance matrix.
-\end{itemize}
-
-The output is an object of class `BF`. When printing an object of class `BF` via the `print()` function, the posterior probabilities for the hypotheses under evaluation are provided, or, in the case `hypothesis = NULL`, the posterior probabilities are given for exploratory tests of whether each parameter is zero, negative, or positive. The `summary()` function shows the results for the exploratory tests, and if hypotheses are specified in the `hypothesis` argument, the results of the confirmatory tests consisting of the posterior probabilities of the hypotheses of interest, the evidence matrix which shows the Bayes factor between each pair of two hypotheses, a specification table which shows all the measures of relative fit and complexity for the equality and/or order constraints of the hypotheses, and an overview of the hypotheses that are tested.
- 
 # Applications\label{sect4}
 
 This section presents a variety of testing problems that can be executed using `BFpack`.
 
-## Application 1: Bayesian $t$ testing in medical research
 
-The example for a one-sample $t$ test was discussed in \cite[][p. 196]{Howell:2012}, and originally presented in @Rosa1998. An experiment was conducted to investigate whether practitioners of the therapeutic touch (a widely used nursing practice) can effectively identify which of their hands is below the experimenter's under blinded condition. Twenty-eight practitioners were involved and tested 10 times in the experiment. Researchers expected an average of 5 correct answers from each practitioner as it is the number by chance if they do not outperform others. In this example, the data are the number of correct answers from 0 to 10 of $n=28$ practitioners. The null and alternative hypotheses are $H_1:\mu=5$ and $H_2:\mu > 5$ where $\mu$ is the mean of the data. If $H_1:\mu=5$ is true, it means that practitioners give correct answers by chance, whereas if $H_2:\mu > 5$, this implies that practitioners do better than expected by random chance. The `BF` function automatically adds the complement hypothesis, $H_3:\mu < 5$, which would imply that practitioners do worse than expected by chance. As there is virtually no prior belief that $H_3$ may be true, and we (for this example) assume that the hypotheses of interest, $H_1$ and $H_2$, are equally likely a priori we set the prior probabilities for $H_1$, $H_2$, and $H_3$ in the confirmatory test to 0.5, 0.5, and 0, respectively, using the `prior` argument.
-Hypotheses $H_1:\mu=5$ versus $H_2:\mu> 5$ are tested used the frequentist $t$ test function `t\_test` from the `R` package `bain` and Bayesian $t$ test function `BF` in the `R` package `BFpack`.
+## 1. Bayesian $t$ testing in medical research
+The one-sample $t$ is one of the most popular tests in applied research for testing the mean $\mu$ in a normally distributed population, $N(\mu,\sigma^2)$, where $\sigma^2$ is the unknown variance, which is a nuisance parameter here. %For a two-samples $t$ test the difference of the two means is of key interest, i.e., $\mu_1-\mu_2$, where $\mu_1$ and $\mu_2$ denote the means of two normal populations, $N(\mu_1,\sigma_1^2)$ and $N(\mu_2,\sigma_2^2)$, and $\sigma^2_1$ and $\sigma^2_2$ denote the unknown population variances which can equal or not depending on the context.
+The standard exploratory one-sample $t$ test in `BFpack` is $H_1:\mu=\mu_0$ versus $H_2:\mu<\mu_0$ versus $H_3:\mu>\mu_0$, where $\mu_0$ is a pre-specified null value. Default Bayes factors are executed based on adjusted fractional Bayes methodology using a minimal fractional (e.g., $\frac{2}{n}$ for a one-sample $t$ test for a sample of size $n$) and a default fractional prior that is centered around the null value $\mu_0$. For technical details about the methodology, we refer the interested reader to Section A.1.
+
+In this section we consider a confirmatory one-sided one-sample $t$ test that was discussed in \citet[][p. 196]{Howell:2012}, and originally presented in \cite{Rosa:1998}. An experiment was conducted to investigate whether practitioners of the therapeutic touch (a widely used nursing practice) can effectively identify which of their hands is below the experimenter's under blinded condition. Twenty-eight practitioners were involved and tested 10 times in the experiment. Researchers expected an average of 5 correct answers from each practitioner as it is the number by chance if they do not outperform others. In this example, the data are the number of correct answers from 0 to 10 of $n=28$ practitioners. The null and alternative hypotheses are $H_1:\mu=5$ and $H_2:\mu > 5$ where $\mu$ is the mean of the data. If $H_1:\mu=5$ is true, it means that practitioners give correct answers by chance, whereas if $H_2:\mu > 5$, this implies that practitioners do better than expected by random chance. In this test the complement hypothesis would be $H_3:\mu < 5$, which assumes that practitioners do worse than expected by chance. As there is virtually no reason that $H_3$ could be true, the complement hypothesis is excluded from the analysis.
+
+First a standard classical $t$ test is executed, and then the output of this analysis is plugged into the `BF` function where hypotheses are formulated on the key parameter `mu`:
 ```{r, eval = FALSE}
 install.packages("BFpack")
 install.packages("bain")
@@ -278,12 +103,11 @@ library(BFpack)
 library(bain)
 ttest1 <- t_test(therapeutic, alternative = "greater", mu = 5)
 print(ttest1)
-BF1 <- BF(ttest1, hypothesis = "mu = 5; mu > 5", prior = c(.5,.5,0))
-summary(BF1)
+BF1 <- BF(ttest1, hypothesis = "mu = 5; mu > 5", complement = FALSE)
+print(BF1)
 ```
-
-The first six lines install and load the R package `BFpack`.
-In the 8th line, `t_test` function renders classical right one-sided $t$ test and stores the result in object `ttest1`, which contains $t$ value, degree of freedom, and $p$ value, as well as $95\%$ confidence interval: \\
+The first four lines install and load the `R` package `BFpack` and `bain`. `bain` contains a function for a standard $t$ test, `t_test`, which is equivalent to `t.test` function but also contains the sample size(s) and sample variance(s) of the data (needed for `BF`) in the output.
+In the 5th line, `t_test` function renders a classical right-tailed one-sided $t$ test and stores the result in object `ttest1`, which after printing in the 6th line yields the $t$ value, degree of freedom, and $p$ value, as well as $95\%$ confidence interval:
 <!-- Output of t-test here>
 data:  therapeutic
 t = -1.9318, df = 27, p-value = 0.968
@@ -291,25 +115,13 @@ alternative hypothesis: true mean is greater than 5
 95 percent confidence interval:
  3.857523      Inf
 sample estimates:
-mean of x
-4.392857
+mean of x 
+ 4.392857 
 -->
-
-The $p$ value indicates that there is no reason to reject $H_1$ against the right one-tailed alternative using traditional choices for the significance level. This however does not imply there is evidence in favor of $H_1$ as significance tests cannot be used for quantifying evidence for a null hypothesis. Next, the object `ttest1` is used as the input for the `BF` function for a Bayesian $t$ test in the 11th and 13th line. Specifically, `BF(ttest1, hypothesis="mu = 5; mu > 5", prior = c(.5,.5,0))` executes a confirmatory Bayes factor test where the hypothesis $H_1: \mu=5$ is tested against $H_2: \mu> 5$. The complement hypothesis, $H_3: \mu< 5$ in this case, is automatically added. The argument `prior=c(.5,.5,0)` indicates that the first two hypotheses are assumed to be equally likely a priori and the third hypothesis does not receive any prior support. The `summary(BF1)` on line 12 shows all the results of the exploratory and confirmatory tests:
-
+As the $p$ value is larger than the significance level of 0.05, we would not reject the traditional null hypothesis where $\mu$ equals 5 against a right-tailed alternative. This result however does not imply there is evidence in favor of $H_1:\mu=5$ as significance tests cannot be used for quantifying evidence for a null hypothesis. Next, the object `ttest1` is used as the input for the `BF` function for a Bayesian $t$ test in the 7th line. This executes a confirmatory one-sided Bayes factor test where the hypothesis $H_1: \mu=5$ is tested against $H_2: \mu> 5$. The argument `complement = FALSE` is used to exclude the complement hypothesis from the analysis. Equal prior probabilities for $H_1$ and $H_2$ are used by default, which implies that the two hypotheses are assumed to be equally likely a priori. The statement on the 8th line prints the Bayes factors and posterior probabilities for the formulated hypotheses which gives:
 <!--
 Call:
-BF.t_test(x = ttest1, hypothesis = "mu=5")
-
-Bayesian hypothesis test
-Type: Exploratory
-Object: t_test
-Parameter: means
-Method: generalized adjusted fractional Bayes factor
-
-Posterior probabilities:
-   Pr(=5) Pr(<5) Pr(>5)
-mu  0.345  0.634  0.021
+BF.t_test(x = ttest1, hypothesis = "mu = 5; mu > 5", complement = FALSE)
 
 Bayesian hypothesis test
 Type: Confirmatory
@@ -319,106 +131,108 @@ Method: generalized adjusted fractional Bayes factor
 
 Posterior probabilities:
    Pr(hypothesis|data)
-H1 0.943
-H2 0.057
-H3 0.000
+H1               0.943
+H2               0.057
 
 Evidence matrix:
-      H1     H2    H3
-H1 1.000 16.473 0.544
-H2 0.061  1.000 0.033
-H3 1.838 30.276 1.000
-
-Specification table:
-   comp_E comp_O fit_E fit_O  BF_E  BF_O    BF   PHP
-H1 0.195     1.0 0.205 1.000 1.053 1.000 1.053 0.943
-H2 1.000     0.5 1.000 0.032 1.000 0.064 0.064 0.057
-H3 1.000     0.5 1.000 0.968 1.000 1.936 1.936 0.000
+      H1     H2
+H1 1.000 16.473
+H2 0.061  1.000
 
 Hypotheses:
 H1: mu=5
 H2: mu>5
-H3: complement
 -->
-The results of the exploratory tests show that the posterior probabilities of the precise null ($\mu=5$), a negative effect ($\mu<5$), and a positive effect ($\mu>5$) are 0.345, 0.634, and 0.021, respectively, while assuming equal prior probabilities for the three hypotheses, i.e., $P(H_1)=P(H_2)=P(H_3)=\frac{1}{3}$. The results from the exploratory test show that the presence of a negative is most plausible given the observed data but the evidence is relatively small as there is still a probability of 0.345 that the precise null is true, and a small probability of 0.021 that there is a positive population effect.
-The exploratory test however ignores the researchers prior expectations that the first two hypotheses were assumed to be equally likely while there was no reason to believe that the third hypothesis could be true, i.e., $P(H_1)=P(H_2)=\frac{1}{2}$ and $P(H_3)=0$. Taking these prior probabilities into account, the confirmatory test shows that there is clearly most evidence that a therapeutic touch does not exist ($H_1$) with a posterior probability of 0.943, followed by the hypothesis that a therapeutic touch exists ($H_2$) with a posterior probability of 0.057. Furthermore the `Evidence matrix` shows that the Bayes factor for $H_1$ against $H_2$ equals 16.473, which is equal to the ratio of the (non rounded) posterior probabilities of the respective hypotheses as equal prior probabilities were specified.
+%The results of the exploratory tests show that the posterior probabilities of the precise null ($\mu=5$), a negative effect ($\mu<5$), and a positive effect ($\mu>5$) are 0.345, 0.634, and 0.021, respectively, while assuming equal prior probabilities for the three hypotheses, i.e., $P(H_1)=P(H_2)=P(H_3)=\frac{1}{3}$. The results from the exploratory test show that the presence of a negative is most plausible given the observed data but the evidence is relatively small as there is still a probability of 0.345 that the precise null is true, and a small probability of 0.021 that there is a positive population effect.
 
-Finally the `Specification table` shows that the measures of relative complexity and relative fit for the constrained hypotheses. The relative fit of the one-sided hypotheses ($H_2:\mu>5$ and $H_3:\mu<5$) equal 0.5 (column `comp_O`), which can be explained by the fact that the implied one-sided subspaces cover half of the unconstrained space. Furthermore the posterior probability mass in the region $\mu>5$ and $\mu<5$ under the unconstrained model equal 0.032 and 0.968 (column `fit_O`), respectively, which quantify the relative fit of the one-sided hypotheses. The unconstrained default prior and posterior density at $\mu=5$ equal 0.195 and 0.205 (column `comp_E` and `fit_E`), which quantify the relative complexity and fit of the precise hypothesis, respectively.
+The `Posterior probabilities` indicate that there is most evidence that a therapeutic touch does not exist ($H_1$) with a posterior probability of 0.943. Next, the `Evidence matrix` presents the Bayes factors between all hypotheses that are specified using the `hypothesis argument.` As the prior probabilities of hypothesis $H_1$ and $H_2$ are equal the Bayes factor of $H_1$ against $H_2$ is equal to the posterior odds of these hypotheses, $\frac{.943}{.057}=16.473$ (the small difference is caused by a rounding error in the last step). Further notice that the Bayes factor of $H_2$ against $H_1$ is equal to the reciprocal of the Bayes factor of $H_1$ against $H_2$ ($16.473=1/0.061$). This follows from the symmetry property of the Bayes factor, e.g., if the relative evidence for $H_1$ against $H_2$ is about 16.473, then the relative evidence for $H_2$ against $H_1$ is about $\frac{1}{16.473}$. Finally the tested hypotheses are printed under.
 
-## Application 2: 2-way ANOVA to investigate numerical judgement
+By using the `summary` function, a more comprehensive overview of the results is printed, which includes the four quantities in the extended Savage-Dickey density ratio in Equation 4 for each hypothesis, as well as the results of the standard exhaustive test, $H_1: \mu=5$ versus $H_2: \mu<5$ versus $H_3: \mu>5$, assuming equal prior probabilities.
+```
+summary(BF1)
+```
+This results in the following additional output for the confirmatory test
+<!--
+Specification table:
+   complex= complex>  fit=  fit>   BF=   BF>    BF   PHP
+H1    0.195      1.0 0.205 1.000 1.053 1.000 1.053 0.943
+H2    1.000      0.5 1.000 0.032 1.000 0.064 0.064 0.057
+-->
+Figure 1 displays the unconstrained posterior and unconstrained fractional prior for these data. The relative complexity of the one-sided hypothesis $H_2$, in the column `complex>`, is equal to the prior probability that the constraints hold under the unconstrained model, which is equal to .5 (as the prior is centered at the test value of 5; Figure 1, dashed line). This value quantifies the relative size of the constrained parameter space as the one-sided hypothesis covers half of the parameter space. Furthermore the relative fit of the one-sided hypothesis, in the column `fit>`, quantifies the relative fit of the one-sided constraint, which is calculated as the posterior probability that the constraint hold, which is equal to .032 (Figure 1, solid line). Furthermore, the relative complexity and the relative fit of the equality hypothesis, in the column `complex=` and `fit=`, respectively, are equal to the probability density at $\mu=5$ for the unconstrained fractional prior and the unconstrained posterior (Figure 1). This may help users to understand how the Bayes factors using Equation 4 are computed. 
 
-@Janiszewski2008 executed several experiments to investigate the numerical judgments of participants. In one of the experiments (referred to as `4a') the outcome variable was the amount by which the price for a television estimated by a participant differed from an anchor price (expressed by means of a $z$ score), and the two factors where (1) whether the anchor price was rounded, e.g., \$5000, or precise, e.g., \$4989 (`anchor` = `rounded` or `precise`, respectively); and (2) whether the participants received a suggestion that the estimated price is close to the anchor value or whether they did not receive this suggestion (`motivation` = `low` or `high`, respectively). An example of a question, with `anchor` = `rounded` and `motivation` = `low`, was: ``The retail price of a TV is \$5000 (rounded). The actual price is only slightly lower than the retail price. Can you guess the price?''. Alternatively, by changing `\$5000' to `\$4989' in the question a `precise` anchor price is obtained. By changing `slightly lower' to `lower' a question with a `high` motivation is obtained.
+<!-- \begin{figure} -->
+<!-- \centering -->
+<!-- \includegraphics[height=6cm,keepaspectratio=true]{ttest.pdf} -->
+<!-- \caption{Unconstrained posterior based on the \code{therapeutic} data (solid line), and the implied unconstrained fractional prior (dashed line). The posterior probability that $\mu>5$ holds is equal to .032 and the prior probability is equal to .5. The posterior and prior density at $\mu=5$ are 0.205 and 0.195, respectively.} -->
+<!-- \label{fig1} -->
+<!-- \end{figure} -->
+
+The `summary(BF1)` statement also provides the posterior probabilities for an exploratory (exhaustive) test, $H_1:\mu=5$ versus $H_2:\mu<5$ versus $H_3:\mu>5$ assuming equal prior probabilities (i.e., $\text{Pr}(H_1)=\text{Pr}(H_2)=\text{Pr}(H_3)=\frac{1}{3}$), which yields:
+<!--
+Bayesian hypothesis test
+Type: Exploratory
+Object: t_test
+Parameter: means
+Method: generalized adjusted fractional Bayes factor
+
+Posterior probabilities:
+   Pr(=5) Pr(<5) Pr(>5)
+mu  0.345  0.634  0.021
+-->
+The posterior probabilities differs from the confirmatory test because the complement hypothesis, $\mu<5$, is also included in the exploratory test. In the exhaustive test the complement hypothesis receives the largest posterior probability. This can be explained from the fact that the unconstrained posterior is concentrated in the region where $\mu<5$ (Figure 1). Finally note that the posterior odds between the hypotheses for $\mu=5$ and $\mu>5$ are equal in the exploratory and the confirmatory test, $\frac{0.345}{0.021} = \frac{0.943}{0.057}$ (with a small difference due to rounding in the last step).
+
+
+
+## 2. 2-way ANOVA for research on numerical judgement
+(Multivariate) analysis of (co)variance ((M)AN(C)OVA) is performed when the interest is in testing group means using dummy group variables under a (multivariate) normal linear model, possibly by correcting for certain covariates. To perform Bayesian ANOVA using `BFpack`, first one needs to fit an ANOVA model with the `aov` function, and subsequently, the fitted model is fed to `BF`. The Bayes factors are based on generalized adjusted fractional Bayes methodology (Section A.1). By default exploratory tests are executed for the presence of main effects and interaction effects.
+
+In this section, a 2-way ANOVA model is considered where the two factors have two levels,
+\[
+y_i = \mu + \delta_1 x_{1i} + \delta_2 x_{2i} + \delta_{12} x_{1i}x_{2i} + \epsilon_i\text{, where $\epsilon_i\sim N(0,\sigma^2)$},
+\]
+where $x_{1i}$ and $x_{2i}$ are dummy variables (0 or 1) for the first and second factor, respectively, so that $\delta_1$, $\delta_2$, and $\delta_{12}$ capture the main effect of the first factor, the main effect of the second factor, and the interaction effect of the two factors, respectively, and $\sigma^2$ is the common within groups variance, a nuisance parameter. For the exploratory test, the two main effects would be tested according to $H_{1}:\delta_1=0$ against $H_{2}:\delta_1\not =0$ (first factor) and $H_{1}:\delta_2=0$ against $H_{2}:\delta_2\not =0$ (second factor), and the interaction effect would be tested as $H_{1}:\delta_{12}=0$ against $H_{2}:\delta_{12}\not =0$.
+
+In experiment '4a' on numerical judgments of participants reported by \cite{Janiszewski:2008}, the outcome variable was the amount by which the price for a television estimated by a participant differed from an anchor price (expressed by means of a $z$ score), and the two factors where (1) whether the anchor price was rounded, e.g., \$5000, or precise, e.g., \$4989 (`anchor` = `rounded` or `precise`, respectively); and (2) whether the participants received a suggestion that the estimated price is close to the anchor value or whether they did not receive this suggestion (`motivation` = `low` or `high`, respectively). An example of a question, with `anchor` = `rounded` and `motivation` = `low`, was: ''The retail price of a TV is \$5000 (rounded). The actual price is only slightly lower than the retail price. Can you guess the price?''. Alternatively, by changing '\$5000' to '\$4989' in the question a `precise` anchor price is obtained. By changing `slightly lower' to `lower' a question with a `high` motivation is obtained.
 
 This $2 \times 2$ ANOVA design can be tested using `BFpack` as follows
-```{r, eval = FALSE}
+```
 aov1 <- aov(price ~ anchor * motivation, data = tvprices)
 BF(aov1)
 ```
-
-```{r, eval = TRUE, echo = FALSE}
-if(file.exists("BF_aov1.RData")){
-  load("BF_aov1.RData")
-} else {
-  aov1 <- aov(price ~ anchor * motivation, data = tvprices)
-  tmp <- BF(aov1)
-  save(tmp, file = "BF_aov1.RData")
-}
-tmp
-```
-For an object of class `aov`, `BFpack` also provides the Bayes factors for the existence of the main effects and interactions effects in the exploratory tests
+For an object of class \code{aov}, \pkg{BFpack} also provides the Bayes factors for the existence of the main effects and interactions effects in the exploratory tests
 <!--
-
 Bayesian hypothesis test
 Type: Exploratory
 Object: aov
 Parameter: group means
 Method: generalized adjusted fractional Bayes factor
 
-Posterior probabilities:
-                            Pr(=0) Pr(<0) Pr(>0)
-(Intercept)                  0.808  0.128  0.064
-anchorrounded                0.000  0.000  1.000
-motivationlow                0.000  1.000  0.000
-anchorrounded:motivationlow  0.144  0.851  0.005
-
 Main effects:
-           Pr(null) Pr(alt)
-anchor            0       1
-motivation        0       1
+           Pr(H0) Pr(H1)
+anchor          0      1
+motivation      0      1
 
 Interaction effects:
-                  Pr(null) Pr(alt)
-anchor:motivation    0.251   0.749
+                  Pr(H0) Pr(H1)
+anchor:motivation  0.251  0.749
 -->
 The results show clear evidence that there there is a main effect for the `anchor` factor and a main effect for the `motivation` factor (with posterior probabilities of approximately 1). Furthermore, there is some evidence that there interaction effect between the two factors is present (with a posterior probability of 0.749). More data need to be collected in order to draw a more decisive conclusion regarding the existence of an interaction.
 
-It is interesting to see how the posterior probabilities for the hypotheses from the exploratory test relate to the p values of the classical significance tests of $H_0:\beta=0$ versus $H_1:\beta\not =0$. This can be checked by running:
-```{r eval = FALSE, echo = TRUE}
-ct <- lmtest::coeftest(aov1)
+
+
+## 3. Testing group variances in neuropsychology
+Besides (or in addition to) testing group means, there are also situations where the interest is in testing the heterogeneity across populations. Equality and order constraints can be tested between group variances $\sigma^2$ under normally distributed groups, i.e., $N(\mu_q,\sigma^2_q)$, under group $q$, for $q=1,\ldots,Q$, where the group means are treated as nuisance parameters. In `BFpack`, homogeneity of group variances is tested by default, i.e., $H_1:\sigma^2_1=\ldots=\sigma^2_Q$ versus $H_2:\text{ not $H_1$}$. Equality/order constrained hypotheses on group variances can be specified using the `hypothesis` argument. For technical details we refer the interested reader to Section A.2.
+
+\citet{Silverstein1995} conducted a psychological study to compare the attentional performances of 17 Tourette's syndrome (TS) patients, 17 ADHD patients, and 17 control subjects who did not suffer from TS or ADHD. The participants were shown a total of 120 sequences of either 3 or 12 letters. Each sequence contained either the letter T or the letter F at a random position. Each sequence was presented for 55 milliseconds and afterwards the participants had to indicate as quickly as possible whether the shown sequence contained a T or an F. After a participant completed all 120 sequences, his or her accuracy was calculated as the percentage of correct answers. In this section, we are interested in comparing the variances of the accuracies in the three groups. Research has shown that ADHD patients tend to be more variable in their attentional performances than subjects who do not suffer from ADHD \citep[e.g.,][]{Kofler2013, Russell2006}.  It is less well documented whether TS patients are less or more variable in their attentional performances than healthy control subjects. We will therefore test the following set of hypotheses to investigate whether TS patients are as variable in their attentional performances as either ADHD patients or healthy controls (C): $H_1\colon \sigma_C^2 = \sigma_{TS}^2 < \sigma_{ADHD}^2$ and $H_2\colon \sigma_C^2 < \sigma_{TS}^2 = \sigma_{ADHD}^2$. We will test these hypotheses against the standard hypothesis of equality of variances, $H_3\colon \sigma_C^2 = \sigma_{TS}^2 = \sigma_{ADHD}^2$, as well as the complement of the three aforementioned hypotheses given by $H_4\colon \text{ not }H_1, H_2, H_3$. The complement is included to safeguard against the data supporting neither of the first three constrained hypotheses.
+
+\citet{Silverstein1995} reported the following sample variances of the accuracies in the three groups: $s_C^2 = 15.52$, $s_{TS}^2 = 20.07$, and $s_{ADHD}^2 = 38.81$. The data are contained in a dataset called \verb|attention|. In `BFpack`, we can conduct the multiple hypothesis test and weigh the evidence in favor of the four hypotheses as follows:
 ```
-This results in p values of $0.66697$, $1.842$e$-10$, $1.410$e$-06$, $0.01115$ for `(Intercept)`, `anchorrounded`, `motivationlow`, and `anchorrounded:motivationlow`, respectively. Thus, when using a significance level of 0.05 we would conclude that there is enough evidence in the data to conclude that an interaction effect is present. The Bayesian test on the other hand suggests that we have to be more cautious as there is still a posterior probability of 0.144 that no interaction effect is present. This illustrates that Bayes factor tests are generally more conservative than classical significance tests, which is one of the reasons for the recent recommendations to use smaller significance levels than the traditional choice of 0.05 [@Benjamin2017].
-
-## Application 3: Testing group variances in neuropsychology
-
-@Silverstein1995 conducted a psychological study to compare the attentional performances of 17 Tourette's syndrome (TS) patients, 17 ADHD patients, and 17 control subjects who did not suffer from TS or ADHD. The participants were shown a total of 120 sequences of either 3 or 12 letters. Each sequence contained either the letter T or the letter F at a random position. Each sequence was presented for 55 milliseconds and afterwards the participants had to indicate as quickly as possible whether the shown sequence contained a T or an F. After a participant completed all 120 sequences, his or her accuracy was calculated as the percentage of correct answers. In this section, we are interested in comparing the variances of the accuracies in the three groups. Research has shown that ADHD patients tend to be more variable in their attentional performances than subjects who do not suffer from ADHD [e.g., @Kofler2013; @Russell2006].  It is less well documented whether TS patients are less or more variable in their attentional performances than healthy control subjects. We will therefore test the following set of hypotheses to investigate whether TS patients are as variable in their attentional performances as either ADHD patients or healthy controls (C): $H_1\colon \sigma_C^2 = \sigma_{TS}^2 < \sigma_{ADHD}^2$ and $H_2\colon \sigma_C^2 < \sigma_{TS}^2 = \sigma_{ADHD}^2$. We will test these hypotheses against the null hypothesis stating equality of variances, $H_0\colon \sigma_C^2 = \sigma_{TS}^2 = \sigma_{ADHD}^2$, as well as the complement of the three aforementioned hypotheses given by $H_3\colon \neg \, (H_0 \lor H_1 \lor H_2)$. We include the complement to safeguard against the data supporting neither of $(H_0, H_1, H_2)$.
-
-@Silverstein1995 reported the following sample variances of the accuracies in the three groups: $s_C^2 = 15.52$, $s_{TS}^2 = 20.07$, and $s_{ADHD}^2 = 38.81$. The data are contained in a dataset called \verb|attention|. In \textbf{BFpack}, we can conduct the multiple hypothesis test and weigh the evidence in favor of the four hypotheses as follows:
-```{r bartlett, eval = TRUE, echo = FALSE}
-save_chunk({
-  bartlett <- bartlett_test(x = attention$accuracy, g = attention$group)
-  hypothesis <- c("Controls = TS < ADHD; Controls < TS = ADHD; Controls = TS = ADHD")
-  set.seed(358)
-  BF_var <- BF(bartlett, hypothesis)
-})
-```
-
-```{r eval = FALSE, echo = TRUE}
 bartlett <- bartlett_test(x = attention$accuracy, g = attention$group)
-hypothesis <- c("Controls = TS < ADHD; Controls < TS = ADHD; Controls = TS = ADHD")
+hypothesis <- "Controls = TS < ADHD; Controls < TS = ADHD;
+  Controls = TS = ADHD"
 set.seed(358)
 BF_var <- BF(bartlett, hypothesis)
 ```
-
 Note that we use equal prior probabilities of the hypotheses by omitting the `prior` argument in the call to the `BF` function. The exploratory posterior probabilities for homogeneity of group variances can be obtained by running `summary(BF_var)` which yields
 <!--
 Bayesian hypothesis test
@@ -427,10 +241,10 @@ Object: BF_bartlett
 Parameter: group variances
 Method: generalized adjusted fractional Bayes factor
 
-   homogeneity of variances no homogeneity of variances
+   homogeneity of variances no homogeneity of variances 
                       0.803                       0.197
 -->
-This results in evidence for equality of group variances. Note that the $p$ value in the classical Bartlett test for these data equals 0.1638 which implies that the null hypothesis of homogeneity of variances cannot be rejected using common significance levels, such as 0.05 or 0.01. Note however that the this $p$ value cannot be used as a measure for the evidence in the data in favor of homogeneity of group variances. This can be done using the proposed Bayes factor test which shows that the probability that the variances are equal is approximately 0.803.
+This results in evidence for equality of group variances. Note that the $p$ value in the classical Bartlett test for these data equals 0.1638 which implies that the null hypothesis of homogeneity of variances cannot be rejected using common significance levels, such as 0.05 or 0.01. Note however that this $p$ value cannot be used as a measure for the evidence in the data in favor of homogeneity of group variances. This can be done using the proposed Bayes factor test which shows that the probability that the variances are equal is approximately 0.803.
 
 The confirmatory test provides a more detailed analysis about the most plausible relationship between the hypotheses (also obtained using the `summary()` call):
 <!--
@@ -455,13 +269,92 @@ H4: complement
 -->
 Thus, $H_1$ receives strongest support from the data, but $H_2$ and $H_3$ are viable competitors. It appears that even the complement $H_3$ cannot be ruled out entirely given a posterior probability of 0.058. To conclude, the results indicate that TS population are as heterogeneous in their attentional performances as the healthy control population in this specific task, but further research would be required to obtain more conclusive evidence.
 
-## Application 4: Multivariate linear regression in fMRI studies
 
-It is well established that the fusiform facial area (FFA), located in the inferior temporal cortex of the brain, plays an important role in the recognition of faces. This data comes from a study on the association between the thickness of specific cortical layers of the FFA and individual differences in the ability to recognize faces and vehicles [@McGuigin2019]. High-resolution fMRI was recorded from 13 adult participants, after which the thickness of the superficial, middle, and deep layers of the FFA was quantified for each individual. In addition, individual differences in  face and vehicle recognition ability were assessed using a battery of tests.
+
+## 4. Logistic regression in forensic psychology
+The generalized linear model is a flexible generalization of the normal linear regression model where the outcome variable has an error that follows a nonnormal distribution \citep{McCullagh}. The logistic regression model is one of the most commonly used generalized linear models where the outcome variable is a binary variable. A logit function of the ''success'' probability of the outcome variable is assumed to follow a linear function of the predictor variables, $\beta_1x_{i1}+\ldots+\beta_Qx_{iq}$. For a fitted `glm` model, the `BF` function executes a Bayes factor test based on the approximate fractional Bayes using a minimal fraction \citep{Gu:2017}. For technical details we refer the interested reader to Section A.3. Here we consider an application from forensic psychology.
+
+The presence of systematic biases in the legal system runs counter to society's expectation of fairness. Moreover such biases can have profound personal ramifications, and the topic therefore warrants close scrutiny. \cite{Wilson:2015} examined the correlation between perceived facial trustworthiness and criminal-sentencing outcomes (data available at \url{https://osf.io/7mazn/}). In Study 1 photos of inmates who had been sentenced to death (or not) were rated by different groups of participants on trustworthiness, 'Afrocentricity' (how sterotypically `black' participants were perceived as), attractiveness and facial maturity. Each photo was also coded for the presence of glasses/tattoos and facial width-to-height ratio. A logistic regression with sentencing as outcome was fitted to the predictors.
+
+Previous research had shown that the facial width-to-height ratio (fWHR) has a postive effect on perceived aggression and thus may also have a positive effect on sentencing outcomes. In addition, perceived Afrocentricity had been shown to be associated with harsher sentences \citep[][]{Wilson:2015}. In the first hypothesis it was expected that all three predictors have a positive effect on the probability of being sentenced to death. Additionally, we might expect lack of perceived trustworthiness to have the largest effect. In the second hypothesis it was assumed that only trustworthiness has a positive effect. Finally, the complement hypothesis was considered. The hypotheses can then be summarized as follows
+\begin{eqnarray*}
+H_1&:& \beta_{trust} > (\beta_{fWHR}, \beta_{afro}) > 0\\
+H_2&:& \beta_{trust} > \beta_{fWHR} = \beta_{afro} = 0\\
+H_3&:& \text{neither $H_1$, nor $H_2$.}
+\end{eqnarray*}
+
+Before fitting the logistic regression we reverse-coded the trustworthiness scale and standardized it to be able to compare the magnitude the three effects. We can then test these hypotheses using `BFpack` and the fitted `glm` object from `R`. Note that the fitted object also contains covariates. The full logistic regression model was first fitted, and then the above hypotheses were tested on the fitted `glm` object:
+<!--
+fit <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract +
+  maturity + tattoos, family = binomial(), data = wilson)
+set.seed(123)
+BF_glm <- BF(fit, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
+  ztrust > zfWHR = zAfro = 0")
+summary(BF_glm)
+-->
+
+In the output we see little support for the first two hypotheses; the complement receives most support:
+<!--
+Posterior probabilities:
+   Pr(hypothesis|data)
+H1               0.071
+H2               0.002
+H3               0.927
+
+Evidence matrix:
+       H1      H2    H3
+H1  1.000  33.066 0.076
+H2  0.030   1.000 0.002
+H3 13.133 434.246 1.000
+
+Hypotheses:
+H1: ztrust>(zfWHR,zAfro)>0
+H2: ztrust>zfWHR=zAfro=0
+H3: complement
+-->
+The evidence matrix shows that the complement hypothesis is around 11.755 times as likely as the second best hypothesis. Based on these results we see that the complement receives most evidence. The fact that none of the two anticipated hypotheses were supported by the data indicates that the theory is not yet well-developed. Closer inspection of the beta-coefficients reveals that this is largely driven by the negative effect between perceived Afrocentricity and sentencing harshness ($\hat{\beta}_{zAfro}=-0.18071$). This unexpected result is discussed further by \cite{Wilson:2015} in their Supplementary Materials (\url{https://journals.sagepub.com/doi/suppl/10.1177/0956797615590992}).
+
+Finally we illustrate how an exploratory Bayes factor test can be executed from output of a classical significance test using the `BF.default` (Section \ref{sect3}):
+```
+ct <- lmtest::coeftest(fit)
+BF(ct[,1], Sigma = diag(ct[,2]^2), n = nrow(wilson))
+```
+Note that for the exploratory tests of the separate effects only the separate standard errors are needed, and not the entire error covariance matrix (which is also not contained in the `ct` object), because for every separate tests the remaining parameters are treated as nuisance parameters and are thus integrated out. Thus the parameters cannot be tested against each other based on the output of the function `coeftest`. The output yields
+<!--
+Call:
+BF.default(x = ct[, 1], Sigma = diag(ct[, 2]^2), n = nrow(wilson))
+
+Bayesian hypothesis test
+Type: Exploratory
+Object: numeric
+Parameter: General
+Method: Bayes factor using Gaussian approximations
+
+Posterior probabilities:
+            Pr(=0) Pr(<0) Pr(>0)
+(Intercept)  0.853  0.014  0.133
+ztrust       0.000  0.000  1.000
+zfWHR        0.001  0.000  0.999
+zAfro        0.365  0.631  0.004
+glasses      0.712  0.009  0.278
+attract      0.930  0.041  0.029
+maturity     0.770  0.219  0.011
+tattoos      0.787  0.011  0.202
+-->
+Because the sample is equal across these tests, the posterior probabilities for zero effects are proportional to the two-tailed p-values. Classical $p$ values however tend to overestimate the evidence against the null hypothesis \cite{Sellke:2001}. This can for instance be seen from the two-tailed $p$ value of `zAfro`, which is equal to .01188 (which is the fourth element in the output of `ct[,4]`), while the posterior probability that the effect of `zAfro` is zero is equal to .365 (based on a prior probability of $\frac{1}{3}$ in the exploratory test). This is one of the motivations for the recent call for using more conservative significance levels when interpreting $p$ values \citep{Benjamin:2017}.
+
+
+## 5. Multivariate linear regression for fMRI studies
+Multivariate normal linear regression models are useful for better understanding how a set of $K$ predictor variables affect $P$ outcome variances when the error follows a multivariate normal error with unknown covariance matrix:
+\[
+y_{ip} = \mu_p + \beta_{1p}x_{i1} + \ldots + \beta_{Kp}x_{iK} + \epsilon_{ip},
+\]
+for the $p$-th outcome variable, for $p=1,\ldots,P$, where $(\epsilon_{i1},\ldots,\epsilon_{iP})'\sim N(\textbf{0},\boldsymbol\Sigma)$, where $\boldsymbol\Sigma$ is an unknown error covariance matrix, and where $\beta_{kp}$ denotes the effect of the $k$-th predictor variable on the $p$-th outcome variable. First `lm` can be used to fit the multivariate normal linear regression model for a given data set. Subsequently Bayesian hypothesis tests are executed using generalized adjusted fractional Bayes factors using `BFpack`(Section A.1). By running the `get_estimates()` function on the multivariate `lm` object ('`mlm`'), a vector is obtained containing the parameters and corresponding labels on which hypotheses can be formulated using the `hypothesis` argument. For example, if a predictor variable has name `x1` and a dependent variable has name `y1`, then the effect of the predictor variable on the dependent variable is labeled as `x1_on_y1`. Hypotheses can be tested by formulating constraints on the effects on the same dependent variable or on effect across different dependent variables. In this section an application is considered from fMRI studies.
+
+It is well established that the fusiform facial area (FFA), located in the inferior temporal cortex of the brain, plays an important role in the recognition of faces. This data comes from a study on the association between the thickness of specific cortical layers of the FFA and individual differences in the ability to recognize faces and vehicles \citep{McGuigin:2019}. High-resolution fMRI was recorded from 13 adult participants, after which the thickness of the superficial, middle, and deep layers of the FFA was quantified for each individual. In addition, individual differences in  face and vehicle recognition ability were assessed using a battery of tests.
 
 ### Analysis of the complete data
-
-In this example, two alternative hypotheses are tested.  In a recent study, @McGuigin2016 found that individual differences in the overall thickness of the FFA are negative correlated with the ability to recognize faces but positively correlated with the ability to recognize cars. $(H_{1})$ is the most parsimonious extension of these findings. It specifies that the magnitude and direction of the association between object recognition and layer thickness is not moderated by layer. To elaborate, consider a multivariate multiple regression model model with cortical thickness measures for the superficial, middle, and deep layers as three repeated (dependent) measures for each participant %[and layer (a factor with three levels) DELETE????]
+In this example, two alternative hypotheses are tested.  In a recent study, \cite{McGuigin:2016} found that individual differences in the overall thickness of the FFA are negative correlated with the ability to recognize faces but positively correlated with the ability to recognize cars. $(H_{1})$ is the most parsimonious extension of these findings. It specifies that the magnitude and direction of the association between object recognition and layer thickness is not moderated by layer. To elaborate, consider a multivariate multiple regression model model with cortical thickness measures for the superficial, middle, and deep layers as three repeated (dependent) measures for each participant %[and layer (a factor with three levels) DELETE????]
 , and facial recognition ability and vehicle recognition ability as two dependent variables. Hypothesis $H_{1}$ is a main effects only model specifying that only main effect terms for face and vehicle are sufficient to predict the thickness of layers. The absence of layer $\times$ face or layer $\times$ vehicle interaction terms means that the relations between face and vehicle recognition are invariant across cortical layers. In other words, this hypothesis specifies that:
 \begin{eqnarray*}
 H_1&:&\beta_{Deep\_on\_Face} = \beta_{Middle\_on\_Face} = \beta_{Superficial\_on\_Face} < 0 <
@@ -469,33 +362,23 @@ H_1&:&\beta_{Deep\_on\_Face} = \beta_{Middle\_on\_Face} = \beta_{Superficial\_on
 &&= \beta_{Middle\_on\_Vehicle} = \beta_{Superficial\_on\_Vehicle}.
 \end{eqnarray*}
 That is, regression coefficients between face recognition and cortical thickness measures are expected to be negative, coefficients between vehicle recognition and cortical thickness measures are expected to be positive, and no layer-specific effect is expected for either faces or vehicles.
+
 Hypothesis $H_{2}$ is based on prior findings concerning the early development of facial recognition abilities and the more rapid development of the deep layer of the FFA. This evidence leads to the following hypothesis: 
 \begin{eqnarray*}
 H_2&:&\beta_{Deep\_on\_Face} < \beta_{Middle\_on\_Face} =\beta_{Superficial\_on\_Face} < 0 < \beta_{Deep\_on\_Vehicle} \\
 &&=\beta_{Middle\_on\_Vehicle} =\beta_{Superficial\_on\_Vehicle} 
 \end{eqnarray*}
-That is, the negative effect between facial recognition and the cortical thickness would be more pronounced in the deep layer, relative to the superficial and middle layers. One could attempt to test and compare these two hypotheses using linear mixed effects models software (e.g., the `gls` function in the `lme` package in `R`) with an appropriate covariance structure on the residuals to account for within-subject dependence. Alternatively one could use a model selection framework like that embodied in the `BayesFactor` package in `R`. Unfortunately, while these approaches can test some components of each hypothesis, they are not well suited to test the directional component of $H_1$, which specifies that all coefficients involving faces are smaller than 0 and that all coefficients involving vehicles are larger than 0. This hypothesis can, however, be tested using `BFpack` in the following way:
-
-```{r eval = FALSE, echo = TRUE}
-fmri.lm <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle, data = fmri)
-constraints.fmri <- "Face_on_Deep = Face_on_Superficial = Face_on_Middle < 0 < Vehicle_on_Deep = Vehicle_on_Superficial = Vehicle_on_Middle; Face_on_Deep < Face_on_Superficial = Face_on_Middle < 0 < Vehicle_on_Deep = Vehicle_on_Superficial = Vehicle_on_Middle"
-
-set.seed(123)
-BF_fmri <- BF(fmri.lm, hypothesis = constraints.fmri)
-summary(BF_fmri)
+That is, the negative effect between facial recognition and the cortical thickness would be more pronounced in the deep layer, relative to the superficial and middle layers. One could attempt to test and compare these two hypotheses using linear mixed effects models software (e.g., the `gls` function in the `lme` package in `R`) with an appropriate covariance structure on the residuals to account for within-subject dependence. Alternatively one could use a model selection framework like that embodied in the `BayesFactor` package in `R`. Unfortunately, while these approaches can test some components of each hypothesis, they are not well suited to test the directional component of $H_1$, which specifies that all coefficients involving faces are smaller than 0 and that all coefficients involving vehicles are larger than 0. This hypothesis can, however, be tested using `BFpack` in the following way. First a multivariate model is fitted with dependent variables `Superficial`, `Middle`, and `Deep` and predictor variables `Face` and `Vehicle`. Subsequently the fitted model and the constrained hypotheses on the effects (e.g., where `Face_on_Deep` refers to the effect of `Deep` on `Face`) are plugged into the `BF` function:
 ```
-
-```{r echo = FALSE, eval = TRUE}
-if(file.exists("BF_fmri.RData")){
-  load("BF_fmri.RData")
-} else {
-  fmri.lm <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle, data = fmri)
-constraints.fmri <- "Face_on_Deep = Face_on_Superficial = Face_on_Middle < 0 < Vehicle_on_Deep = Vehicle_on_Superficial = Vehicle_on_Middle; Face_on_Deep < Face_on_Superficial = Face_on_Middle < 0 < Vehicle_on_Deep = Vehicle_on_Superficial = Vehicle_on_Middle"
-
+fmri.lm <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle,
+  data = fmri)
+constraints.fmri <- "Face_on_Deep = Face_on_Superficial = Face_on_Middle
+  < 0 < Vehicle_on_Deep = Vehicle_on_Superficial = Vehicle_on_Middle;
+  Face_on_Deep < Face_on_Superficial = Face_on_Middle < 0 <
+  Vehicle_on_Deep = Vehicle_on_Superficial = Vehicle_on_Middle"
 set.seed(123)
 BF_fmri <- BF(fmri.lm, hypothesis = constraints.fmri)
-save(BF_fmri, file = "BF_fmri.RData")
-}
+print(BF_fmri)
 ```
 This results in the following posterior probabilities and evidence matrix:
 <!--
@@ -511,203 +394,77 @@ H1  1.000 0.024  13.35
 H2 42.391 1.000 565.93
 H3  0.075 0.002   1.00
 -->
-In this analysis, hypothesis $H_3$ is the complement hypothesis. The evidence matrix reveals there is clear evidence for $H_{2}$ against $H_1$ ($B_{21} = 42.391$) and extreme evidence for $H_2$ against $H_3$ ($B_{23} = 565.93$). The same conclusion can be drawn when looking at the posterior probabilities for the hypotheses. Based on these result we would conclude that hypothesis $H_2$ receives most evidence and the Bayesian probability of drawing the wrong conclusion after observing the data would be relatively small, namely, 0.025.
+In this analysis, hypothesis $H_3$ is the complement hypothesis which assumes that neither the constraints hold under $H_1$ nor the constraints under $H_2$. The evidence matrix reveals there is clear evidence for $H_{2}$ against $H_1$ ($B_{21} = 42.391$) and extreme evidence for $H_2$ against $H_3$ ($B_{23} = 565.93$). The same conclusion can be drawn when looking at the posterior probabilities for the hypotheses. Based on these result we would conclude that hypothesis $H_2$ receives most evidence and the Bayesian probability of drawing the wrong conclusion after observing the data would be relatively small, namely, 0.025.
 
-### Analysis with missing observations\label{SectionMissing}
 
-Here we illustrate how a Bayes factor test can be executed in the case of missing observations in the fMRI data set that are missing at random. A slightly simpler hypothesis test is considered to reduce the computation time\footnote{The hypotheses from Section 4.4 \textit{Analysis of complete data} has constraints on the effects across different predictor variables and different dependent variables, therefore requiring Monte Carlo estimation to obtain the Bayes factors. On the other hand, when the constraints are formulated on the effects of the same predictor on different dependent variables, an analytic expression is available for the Bayes factors.}
-```{r}
-constraints.fmri2 <- "Face_on_Deep = Face_on_Superficial = Face_on_Middle < 0; Face_on_Deep < Face_on_Superficial = Face_on_Middle < 0"
+### Analysis with missing observations
+Missing data are ubiquitous in statistical practice. Properly handling missing data in model selection and hypothesis testing problems has not received a lot of attention in the literature, as the focus generally lies on estimation problems in the presence of missing observations. Appendix B discusses how to estimate the Bayes factors of the form of the extended Savage-Dickey density ratio in Equation 4 using the unconstrained posterior predictive distribution when the missings are missing at random \cite{LittleRubin2002}. The methodology is based on \cite{Hoijtink:2018b}.
+
+Here we illustrate how Bayes factors can be obtained in the case of random missing observations in the fMRI data set. A slightly simpler constrained hypothesis test is considered to reduce computation time for illustrational purposes, given by
 ```
-
+constraints.fmri2 <- 
+  "Face_on_Deep = Face_on_Superficial = Face_on_Middle < 0;
+  Face_on_Deep < Face_on_Superficial = Face_on_Middle < 0"
+```
 First the Bayes factors and posterior probabilities are obtained for this hypothesis test for the complete data set:
-```{r, echo = TRUE, eval = FALSE}
-fmri.lm2 <- lm(cbind(Superficial,Middle,Deep) ~ Face + Vehicle, data = fmri)
+```
+fmri.lm2 <- lm(cbind(Superficial,Middle,Deep) ~ Face +
+  Vehicle, data = fmri)
 BF.fmri2 <- BF(fmri.lm2, hypothesis = constraints.fmri2)
 ```
-
-```{r, echo = FALSE, eval = TRUE}
-if(file.exists("BF_fmri2.RData")){
-  load("BF_fmri2.RData")
-} else {
-  fmri.lm2 <- lm(cbind(Superficial,Middle,Deep) ~ Face + Vehicle, data = fmri)
-  BF.fmri2 <- BF(fmri.lm2, hypothesis = constraints.fmri2)
-  save(BF.fmri2, file = "BF_fmri2.RData")
-}
-```
-
 This results in posterior probabilities of 0.050, 0.927, and 0.023 for the two constrained hypotheses and the complement hypothesis, respectively. The Bayes factor of the most supported hypothesis ($H_2$) against the second most supported hypothesis ($H_1$) equals $B_{21}=18.443$.
 
 Now 10 missing observations (out of 65 separate observations in total) are randomly created that are missing at random:
-```{r}
+```
 fmri_missing <- fmri
 set.seed(1234)
 for(i in 1:10){
-    fmri_missing[sample(1:nrow(fmri), 1), sample(1:ncol(fmri), 1)] <- NA
+  fmri_missing[sample(1:nrow(fmri), 1), sample(1:ncol(fmri), 1)] <- NA
 }
 ```
-
 This results in 7 rows with at least one missing observation. Therefore listwise deletion would leave us with only 6 complete observations (of the 13 rows in total).
-Even though listwise deletion is generally not recommended [@Rubin1987; @Rubin1996], for this illustration we compute the Bayes factors and posterior probabilities based on these 6 complete data observations to illustrate the loss of evidence as a result of list-wise deletion.
-```{r, echo = TRUE, eval = FALSE}
+Even though list-wise deletion is generally not recommended \citep{Rubin:1987,Rubin:1996}, for this illustration we compute the Bayes factors and posterior probabilities based on these 6 complete data observations to illustrate the loss of evidence as a result of list-wise deletion.
+```
 fmri_listdel <- fmri_missing[!is.na(apply(fmri_missing, 1, sum)),]
-fmri.lm2_listdel <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle, data = fmri_listdel)
-BF.fmri2 <- BF(fmri.lm2_listdel, hypothesis = constraints.fmri2)
-print(BF.fmri2)
+fmri.lm2_listdel <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle,
+  data = fmri_listdel)
+BF.fmri2_listdel <- BF(fmri.lm2_listdel, hypothesis = constraints.fmri2)
+print(BF.fmri2_listdel)
 ```
-
-```{r, echo = FALSE, eval = FALSE}
-if(file.exists("BF.fmri2_del.RData")){
-  load("BF.fmri2_del.RData")
-} else {
-  fmri_listdel <- fmri_missing[!is.na(apply(fmri_missing, 1, sum)),]
-  fmri.lm2_listdel <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle, data = fmri_listdel)
-  BF.fmri2 <- BF(fmri.lm2_listdel, hypothesis = constraints.fmri2)
-  save(BF.fmri2, file = "BF.fmri2_del.RData")
-}
-print(BF.fmri2)
-```
-
 This results in posterior probabilities of 0.010, 0.820, and 0.170 for the two constrained hypotheses and the complement hypothesis, respectively. As expected the evidence for the hypothesis $H_2$ which received most evidence in based on the complete data set, decreased from 0.927 to 0.820.
 
-Next we illustrate that multiple imputation results a smaller loss in evidence because the partly observed cases are still used in the analysis. We generate 500 imputed data sets using `mice` from the `mice` package [@mice2019], and use the `BF()` function to get the measures of relative fit and relative complexity for the equality and order constraints for the three hypotheses. These are be obtained from the element `BFtable_confirmatory` of an object of class `BF`\footnote{Note that the measures of relative fit and relative complexity can also be found in the `Specification table' when calling the `summary()` function on an object of class `BF` in the case of a confirmatory test on the hypotheses specified in the `hypothesis` argument of the `BF()` function.}
-```{r, echo=TRUE, eval=FALSE}
+Next we illustrate that multiple imputation results a smaller loss in evidence because the partly observed cases are still used in the analysis. We first generate 500 imputed data sets using `mice` from the `mice` package \citep{mice:2019}, and then use `BF()` to get the measures of relative fit and relative complexity for the equality and order constraints for the three hypotheses. These are be obtained from the element `BFtable_confirmatory` of an object of class `BF`:
+```
 M <- 500
 library(mice)
 mice_fmri <- mice :: mice(data = fmri_missing, m = M, meth = c("norm",
-    "norm", "norm", "norm", "norm"), diagnostics = F, printFlag = F)
+  "norm", "norm", "norm", "norm"), diagnostics = F, printFlag = F)
 relmeas_all <- matrix(unlist(lapply(1:M, function(m){
-    fmri.lm_m <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle,
-    data = mice::complete(mice_fmri, m))
-    BF.fmri2_m <- BF(fmri.lm_m, hypothesis = constraints.fmri2)
-    c(BF.fmri2_m$BFtable_confirmatory[, 1:4])
-  })),ncol = M)
+  fmri.lm_m <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle,
+  data = mice::complete(mice_fmri, m))
+  BF.fmri2_m <- BF(fmri.lm_m, hypothesis = constraints.fmri2)
+  c(BF.fmri2_m$BFtable_confirmatory[, 1:4])
+})),ncol = M)
 relmeas <- matrix(apply(relmeas_all, 1, mean),nrow = 3)
 row.names(relmeas) <- c("H1", "H2", "H3")
 colnames(relmeas) <- c("comp_E", "comp_O", "fit_E", "fit_O")
 BF_tu_confirmatory <- relmeas[,3] * relmeas[,4] / (relmeas[,1] *
-    relmeas[,2])
+  relmeas[,2])
 PHP <- BF_tu_confirmatory / sum(BF_tu_confirmatory)
-BF_21_confirmatory <- BF_tu_confirmatory[2] / BF_tu_confirmatory[1]
+print(PHP)
 ```
-
-```{r, echo=FALSE, eval=TRUE}
-library(mice)
-if(file.exists("BF_21_confirmatory.RData")){
-  load("BF_21_confirmatory.RData")
-} else {
-  M <- 500
-
-mice_fmri <- mice :: mice(data = fmri_missing, m = M, meth = c("norm",
-    "norm", "norm", "norm", "norm"), diagnostics = F, printFlag = F)
-relmeas_all <- matrix(unlist(lapply(1:M, function(m){
-    fmri.lm_m <- lm(cbind(Superficial, Middle, Deep) ~ Face + Vehicle,
-    data = mice::complete(mice_fmri, m))
-    BF.fmri2_m <- BF(fmri.lm_m, hypothesis = constraints.fmri2)
-    c(BF.fmri2_m$BFtable_confirmatory[, 1:4])
-  })),ncol = M)
-relmeas <- matrix(apply(relmeas_all, 1, mean),nrow = 3)
-row.names(relmeas) <- c("H1", "H2", "H3")
-colnames(relmeas) <- c("comp_E", "comp_O", "fit_E", "fit_O")
-BF_tu_confirmatory <- relmeas[,3] * relmeas[,4] / (relmeas[,1] *
-    relmeas[,2])
-PHP <- BF_tu_confirmatory / sum(BF_tu_confirmatory)
-BF_21_confirmatory <- BF_tu_confirmatory[2] / BF_tu_confirmatory[1]
-save(mice_fmri, relmeas_all, BF_21_confirmatory, PHP, BF_tu_confirmatory, relmeas, file = "BF_21_confirmatory.RData")
-}
-
-```
+In the 11th line the averages are computed for the four different measures of relative fit and relative complexity for the constrained hypotheses in Equation 4, across all 100 imputed datasets. Appropriate names are given on lines 12 and 13 for illustrative purposes. Subsequently in the 14th line, the Bayes factors of all constrained hypotheses against an unconstrained alternative are computed using the Equation 4 based on the four different quantities (which also holds for the generalized adjusted fractional Bayes factor; Section A.1).
 This results in posterior probabilities of 0.066, 0.909, and 0.025 for the two constrained hypotheses and the complement hypothesis, respectively. Thus the posterior probability for the most supported hypothesis is still 0.909 (compared to 0.927 based on the complete data set), which is considerably larger than the posterior probability of 0.820 which was obtained using the data set after list-wise deletion.
 
-## Application 5: Logistic regression in forensic psychology
 
-The presence of systematic biases in the legal system runs counter to society's expectation of fairness. Moreover such biases can have profound personal ramifications, and the topic therefore warrants close scrutiny. @Wilson2015 examined the correlation between perceived facial trustworthiness and criminal-sentencing outcomes (data available at \url{https://osf.io/7mazn/}). In Study 1 photos of inmates who had been sentenced to death (or not) were rated by different groups of participants on trustworthiness, `Afrocentricity' (how sterotypically `black' participants were perceived as), attractiveness and facial maturity. Each photo was also coded for the presence of glasses/tattoos and facial width-to-height ratio. A logistic regression with sentencing as outcome was fitted to the predictors.
 
-Previous research had shown that the facial width-to-height ratio (fWHR) has a postive effect on perceived aggression and thus may also have a positive effect on sentencing outcomes. In addition, perceived Afrocentricity had been shown to be associated with harsher sentences [@Wilson2015]. In the first hypothesis it was expected that all three predictors have a positive effect on the probability of being sentenced to death. Additionally, we might expect lack of perceived trustworthiness to have the largest effect. In the second hypothesis it was assumed that only trustworthiness has a positive effect. Finally, the complement hypothesis was considered. The hypotheses can then be summarized as follows
-\begin{eqnarray*}
-H_1&:& \beta_{trust} > (\beta_{fWHR}, \beta_{afro}) > 0\\
-H_2&:& \beta_{trust} > (\beta_{fWHR}, \beta_{afro}) = 0\\
-H_3&:& \text{neither $H_1$, nor $H_2$.}
-\end{eqnarray*}
-Before fitting the logistic regression we reverse-coded the trustworthiness scale and standardized it to be able to compare the magnitude the three effects. We can then test these hypotheses using `BFpack` and the fitted `glm` object from `R`. Note that the fitted object also contains covariates. The full logistic regression model was first fitted, and then the above hypotheses were tested on the fitted `glm` object:
-```{r, echo = TRUE, eval = FALSE}
-fit <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract +
-    maturity + tattoos, family = binomial(), data = wilson)
-set.seed(123)
-BF_glm <- BF(fit, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
-    ztrust > 0 & zfWHR = zAfro = 0")
-summary(BF_glm)
-```
-
-```{r, echo = FALSE, eval = TRUE}
-if(file.exists("BF_glm.RData")){
-  load("BF_glm.RData")
-} else {
-  fit <- glm(sent ~ ztrust + zfWHR + zAfro + glasses + attract +
-    maturity + tattoos, family = binomial(), data = wilson)
-set.seed(123)
-BF_glm <- BF(fit, hypothesis = "ztrust > (zfWHR, zAfro) > 0;
-    ztrust > 0 & zfWHR = zAfro = 0")
-  save(BF_glm, file = "BF_glm.RData")
-}
-
-summary(BF_glm)
-```
-In the output we see little support for the first two hypotheses; the complement receives most support:
-<!--
-Hypotheses:
-   Pr(hypothesis)
-H1               0.079
-H2               0.005
-H3               0.915
-Hypotheses:
-H1: ztrust>(zfWHR,zAfro)>0
-H2: ztrust>(zfWHR,zAfro)=0
-H3: complement
--->
-The evidence matrix shows that the complement hypothesis is around 11.589 times as likely as the second best hypothesis:
-<!--
-Evidence matrix:
-       H1      H2    H3
-H1  1.000  12.474 0.086
-H2  0.080   1.000 0.007
-H3 11.589 144.556 1.000
--->
-Based on these results we see that the complement receives most evidence. The fact that none of the two anticipated hypotheses were supported by the data indicates that the theory is not yet well-developed. Closer inspection of the beta-coefficients reveals that this is largely driven by the negative effect between perceived Afrocentricity and sentencing harshness ($\hat{\beta}_{afro}=-0.18071$). This unexpected result is discussed further by @Wilson2015 in their Supplementary Materials (\url{https://journals.sagepub.com/doi/suppl/10.1177/0956797615590992}).
-
-Finally we illustrate how an exploratory Bayes factor test can be executed from output of a classical significance test:
-```{r, echo = FALSE, eval = FALSE}
-ct <- lmtest::coeftest(fit)
-BF(ct[,1], sigma = diag(ct[,2]^2), n = nrow(wilson))
-```
-Note that the dependency between the parameters can be ignored when performing tests on separate coefficients. The output is given by:
-<!--
-Call:
-BF(ct[, 1], sigma = diag(ct[, 2]^2), n = nrow(wilson))
-
-Bayesian hypothesis test
-Type: Exploratory
-Object: numeric
-Parameter: General
-Method: Bayes factor using Gaussian approximations
-
-Posterior probabilities
-            Pr(=0) Pr(<0) Pr(>0)
-(Intercept) 0.853  0.014  0.133
-ztrust      0.000  0.000  1.000
-zfWHR       0.001  0.000  0.999
-zAfro       0.365  0.631  0.004
-glasses     0.712  0.009  0.278
-attract     0.930  0.041  0.029
-maturity    0.770  0.219  0.011
-tattoos     0.787  0.011  0.202
--->
-
-## Application 6: Testing measures of association in neuropsychology
+## 6. Testing measures of association in neuropsychology
+Measures of association play a central role in the applied sciences to quantify the degree of association between the variables of interest, possibly while correcting for certain control variables. The Pearson product-moment correlation coefficient is the most commonly used measure of association which expresses the strength of the linear relationship between two continuous variables. `BFpack` allows researchers to perform simple Bayesian tests on single correlations, e.g., $H_1:\rho=0$ versus $H_2:\rho<0$ versus $H_3:\rho>0$) and complex Bayesian tests of equality and order constraints on multiple correlations (e.g., $H_1:\rho_1=\rho_2=\rho_3$ versus $H_2:\rho_1<\rho_2<\rho_3$ versus $H_3:\text{ not }H_1,~H_2$). First an unconstrained Bayesian model can be fitted for correlation analysis using the function `cor_test`. The fitted object can then be fed to `BF` to perform Bayes factor tests on the correlations. These Bayes factors are based on uniform priors for the free correlations under the constrained hypotheses. Technical details on the implemented Bayes factors for testing measures of association can be found in Section A.4. In this section the methodology is applied in the field of neuropsychology.
 
 Schizophrenia is often conceptualized as a disorder of ``dysconnectivity'' characterized by disruption in neural circuits that connect different regions of the brain (e.g., Friston \& Firth, 1995). This data set (originally collected by Ichinose, Han, Polyn, Park  and Tomarken (2019; summarized in Tomarken \& Mulder, in preparation) can be used to test whether such dysconnection is manifested behaviorally as weaker correlations among measures that we would expect to be highly correlated among non-schizophrenic individuals. 20 patients suffering from schizophrenia (SZ group) and 20 healthy control (HC group) participants were administered six measures of working memory. Ichinose et al. hypothesized that each of the 15 correlations would be smaller in the schizophrenic group relative to the control group.
 
-This data set is an interesting case of how an order-constrained Bayesian approach can provide a more powerful and more appropriate test relative to alternative methods. Table \ref{tablecorr} presents the Pearson correlations for the two groups. Several features are notable: (1) Each of the 15 correlations is higher in the HC group than the SZ group; (2) On average the correlations among the HC group are rather high (on average $0.59$); and, (3) The average correlation within the SZ group is essentially 0. Despite this clear pattern, there were significant differences between the HC and SZ groups on only 2 of 15 correlations when the false discovery rate was used to control for multiple testing. 
+This data set is an interesting case of how an order-constrained Bayesian approach can provide a more powerful and more appropriate test relative to alternative methods. The table presents the Pearson correlations for the two groups. Several features are notable: (1) Each of the 15 correlations is higher in the HC group than the SZ group; (2) On average the correlations among the HC group are rather high (on average $0.59$); and, (3) The average correlation within the SZ group is essentially 0. Despite this clear pattern, there were significant differences between the HC and SZ groups on only 2 of 15 correlations when the false discovery rate was used to control for multiple testing. 
+
 \begin{table}[ht]
 \centering
 \newcommand{\mysubscript}[1]{\raisebox{-0.34ex}{\scriptsize#1}}
@@ -726,35 +483,50 @@ This data set is an interesting case of how an order-constrained Bayesian approa
 \end{tabular}\label{tablecorr}
 \caption{Correlations for the SZ (above diagonal) and HC (below diagonal) groups.}
 \end{table}
+
 Given that the overall pattern of group differences is consistent with hypotheses, simultaneous testing procedures would appear to be a better approach than tests on individual correlations. Indeed, both maximum likelihood and resampling tests convincingly indicated that the covariance and correlation matrices across groups differ ($p < 0.01$). However, there are a number of ways in which two correlation or covariance matrices may differ. Thus, the conventional procedures for comparing matrices do not test the specific hypothesis that, for each of the 15 correlations, the value for the HC group is greater than the value for the SZ group.
 
-This hypothesis can, however, be tested in a straightforward manner using `BFpack`. $H_{1}$ specifies that each correlation in the HC group is expected to be larger than the corresponding correlation in the SZ group (i.e., a total of 15 order constraints were imposed). $H_{A}$ represents any pattern of correlations other than those that were consistent with $H_1$. The R syntax is as follows:
-```{r, eval = FALSE}
-lm6 <- lm(cbind(Im, Del, Wmn, Cat, Fas, Rat) ~ -1 + Group,
-    data = schiz)
-set.seed(123)
-BF6_cor <- BF(lm6,parameter = "correlation", hypothesis =
-    "Del_with_Im_in_GroupHC > Del_with_Im_in_GroupSZ &
-    Del_with_Wmn_in_GroupHC > Del_with_Wmn_in_GroupSZ & 
-    Del_with_Cat_in_GroupHC > Del_with_Cat_in_GroupSZ &
-    Del_with_Fas_in_GroupHC > Del_with_Fas_in_GroupSZ &
-    Del_with_Rat_in_GroupHC > Del_with_Rat_in_GroupSZ & 
-    Im_with_Wmn_in_GroupHC > Im_with_Wmn_in_GroupSZ & 
-    Im_with_Cat_in_GroupHC > Im_with_Cat_in_GroupSZ &
-    Im_with_Fas_in_GroupHC > Im_with_Fas_in_GroupSZ &
-    Im_with_Rat_in_GroupHC > Im_with_Rat_in_GroupSZ & 
-    Wmn_with_Cat_in_GroupHC > Wmn_with_Cat_in_GroupSZ &
-    Wmn_with_Fas_in_GroupHC > Wmn_with_Fas_in_GroupSZ &
-    Wmn_with_Rat_in_GroupHC > Wmn_with_Rat_in_GroupSZ & 
-    Cat_with_Fas_in_GroupHC > Cat_with_Fas_in_GroupSZ &
-    Cat_with_Rat_in_GroupHC > Cat_with_Rat_in_GroupSZ & 
-    Fas_with_Rat_in_GroupHC > Fas_with_Rat_in_GroupSZ")
-summary(BF6_cor)
+This hypothesis can, however, be tested in a straightforward manner using `BFpack`. $H_{1}$ specifies that each correlation in the HC group is expected to be larger than the corresponding correlation in the SZ group (i.e., a total of 15 order constraints were imposed). The complement hypothesis $H_{2}$ represents any pattern of correlations other than those that were consistent with $H_1$. First the data `memory` is split into two for the two different groups, and the unconstrained posteriors for the (Fisher transformed) correlations are estimated using the `cor_test` function for the HC group (group 1) and the SZ group (group 2). The group numbers follow from the order that the data matrices are plugged into `cor_test`. Subsequently, the hypotheses are tested using `BF`:
 ```
-Based on the summary, which can be obtained by running
-the Bayes Factor for $H_{1}$ against $H_{A}$ was approximately $4631.01$ and the posterior probability for $H_{1}$ was effectively 1. Thus the order-constrained analysis indicate decisive support for the researchers' hypothesis. 
+memoryHC <- subset(memory,Group=="HC")[,-7]
+memorySZ <- subset(memory,Group=="SZ")[,-7]
+set.seed(123)
+cor1 <- cor_test(memoryHC,memorySZ)
+BF6_cor <- BF(cor1, hypothesis =
+  "Del_with_Im_in_g1 > Del_with_Im_in_g2 &
+  Del_with_Wmn_in_g1 > Del_with_Wmn_in_g2 & 
+  Del_with_Cat_in_g1 > Del_with_Cat_in_g2 &
+  Del_with_Fas_in_g1 > Del_with_Fas_in_g2 &
+  Del_with_Rat_in_g1 > Del_with_Rat_in_g2 & 
+  Im_with_Wmn_in_g1 > Im_with_Wmn_in_g2 & 
+  Im_with_Cat_in_g1 > Im_with_Cat_in_g2 &
+  Im_with_Fas_in_g1 > Im_with_Fas_in_g2 &
+  Im_with_Rat_in_g1 > Im_with_Rat_in_g2 & 
+  Wmn_with_Cat_in_g1 > Wmn_with_Cat_in_g2 &
+  Wmn_with_Fas_in_g1 > Wmn_with_Fas_in_g2 &
+  Wmn_with_Rat_in_g1 > Wmn_with_Rat_in_g2 & 
+  Cat_with_Fas_in_g1 > Cat_with_Fas_in_g2 &
+  Cat_with_Rat_in_g1 > Cat_with_Rat_in_g2 & 
+  Fas_with_Rat_in_g1 > Fas_with_Rat_in_g2")
+print(BF6_cor)
+```
+This yields:
+<!--
+Posterior probabilities:
+   Pr(hypothesis|data)
+H1                   1
+H2                   0
 
-## Application 7: Testing intraclass correlations in educational testing
+Evidence matrix:
+   H1       H2
+H1  1 5647.244
+H2  0    1.000
+-->
+Thus, the Bayes Factor for $H_{1}$ against $H_{2}$ is approximately $5647$ and the posterior probability for $H_{1}$ was effectively 1. Thus the order-constrained analysis indicate decisive support for the researchers' hypothesis. 
+
+
+## 7. Intraclass correlations in educational testing
+The multilevel or mixed effects model is the gold standard for modeling hierarchically structured data. In the mixed effects model the within-clusters variability is separately modeled from the between-clusters variability. The intraclass correlation plays a central role as a measure of the relative degree of clustering in the data where an intraclass correlation close to 1 (0) indicates a very high (low) degree of clustering in the data. Despite the widespread usage of mixed effects models in the (applied) statistical literature, there are few statistical tests for testing variance components; exceptions include \cite{Westfall:1996,Garcia:2007,Saville:2009,Thalmann:2017}. Recently, a Bayes factor for testing equality/order constrained hypotheses on intraclass correlations (and random intercept variances) was proposed by \cite{MulderFox:2019} under a marginal modeling framework \citep{Fox:2017,MulderFox:2013}. In the marginal model the random effects are integrated out and the intraclass correlations have become covariance parameters in a structured covariance matrix. As a consequence the intraclass correlations can attain negative values. A negative intraclass correlation implies that there is a smaller degree of clustering than under random group assignment. As the intraclass correlations are bounded proper uniform priors can be specified under the constrained hypotheses. For example under the unconstrained model, uniform priors are specified for the intraclass correlations in the interval $(-\frac{1}{p-1},1)$, where $p$ is the cluster size. This prior is equivalent to a shifted-$F$ prior on the between-cluster variances. Improper Jeffreys priors are used for the nuisance parameters $\boldsymbol\beta$ and $\phi^2$. By default, posterior probabilities are computed when testing whether a intraclass correlation is zero, negative, or positive. Technical details of the implemented model can be found in Section A.5.
 
 Data from the Trends in International Mathematics and Science Study (TIMSS; \url{http://www.iea.nl/timss}) were used to examine differences in intraclass correlations of four countries (The Netherlands (NL), Croatia (HR), Germany (DE), and Denmark (DK)) with respect to the mathematics achievements of fourth graders (e.g., the first plausible value was used as a measure of mathematics achievement). The sample design of the TIMSS data set is known to describe three levels with students nested within classrooms/schools, and classrooms/schools nested within countries (e.g., one classroom is sampled per school). In this example, the TIMSS 2011 assessment was considered.
 
@@ -769,78 +541,49 @@ H_3 &:& \text{neither $H_1$, nor $H_2$.}
 The ordering in the intraclass correlations was hypothesized by considering the reported standard errors of the country-mean scores. From the variance inflation factor followed, $1+(p-1)\rho$, with $p$ the number of students in each school (balanced design), it follows that the variance of the mean increases for increasing values of the intraclass correlation coefficient. As a result, the ordering in estimated standard errors of the average mathematic achievements of fourth graders of the cycles from 2003 to 2015 was used to hypothesis the order in intraclass correlations. From a more substantive perspective, it is expected that schools in the Netherlands do not differ much with respect to their performances (low intraclass correlation) in contrast to Denmark, where school performances may differ considerably (high intraclass correlation).
 
 A linear mixed effects model was used to obtain (restricted) maximum likelihood estimates of the fixed effects of the student variables and the country means, the four random effects corresponding to the clustering of students in schools in each country, and the measurement error variance, given the 2011 assessment data.
-```{r, eval = FALSE, echo = TRUE}
-library(lme4)
-timssICC_subset <- timssICC[(timssICC$groupNL11 == 1) + 
-    (timssICC$groupHR11 == 1) + (timssICC$groupDE11 == 1) +
-    (timssICC$groupDK11 == 1) > 0,]
-outlme1 <- lmer(math ~ -1 + gender + weight + lln +
-    groupNL11 + (0 + groupNL11 | schoolID) +
-    groupHR11 + (0 + groupHR11 | schoolID) +
-    groupDE11 + (0 + groupDE11 | schoolID) +
-    groupDK11 + (0 + groupDK11 | schoolID), 
-    data=timssICC_subset)
 ```
-
-```{r, eval = TRUE, echo = FALSE}
-library(lme4)
-if(file.exists("outlme1.RData")){
-  load("outlme1.RData")
-} else {
-  timssICC_subset <- timssICC[(timssICC$groupNL11 == 1) + 
-    (timssICC$groupHR11 == 1) + (timssICC$groupDE11 == 1) +
-    (timssICC$groupDK11 == 1) > 0,]
-outlme1 <- lmer(math ~ -1 + gender + weight + lln +
-    groupNL11 + (0 + groupNL11 | schoolID) +
-    groupHR11 + (0 + groupHR11 | schoolID) +
-    groupDE11 + (0 + groupDE11 | schoolID) +
-    groupDK11 + (0 + groupDK11 | schoolID), 
-    data=timssICC_subset)
-  save(outlme1, file = "outlme1.RData")
-}
-
+R> library(lme4)
+R> timssICC_subset <- subset(timssICC, groupNL11 == 1 | groupHR11 == 1 | 
++    groupDE11 == 1 | groupDK11 == 1)
+R> outlme1 <- lmer(math ~ -1 + gender + weight + lln +
++    groupNL11 + (0 + groupNL11 | schoolID) +
++    groupHR11 + (0 + groupHR11 | schoolID) +
++    groupDE11 + (0 + groupDE11 | schoolID) +
++    groupDK11 + (0 + groupDK11 | schoolID), 
++    data=timssICC_subset)
 ```
-where the `schoolID` factor variable assigns a unique code to each school, and each country-specific group variable (e.g., `groupNL11`) equals one when it concerns a school in that country and zero otherwise. The `lmer` output object[@lme4] was used as input in the BF function for the Bayes factor computation, where hypothesis $H_1$ and $H_2$ were added as arguments in the function call;
-```{r, echo = TRUE, eval = FALSE}
-set.seed(123)
-BFicc <- BF(outlme1, hypothesis = 
-    "groupNL11 < groupHR11 < groupDE11 < groupDK11;
-    groupNL11 = groupHR11 = groupDE11 = groupDK11")
+where the `schoolID` factor variable assigns a unique code to each school, and each country-specific group variable (e.g., `groupNL11`) equals one when it concerns a school in that country and zero otherwise. The `lmer` output object \citep{lme4} was used as input in the `BF` function for the Bayes factor computation, where hypothesis $H_1$ and $H_2$ were added as arguments in the function call;
 ```
-
-```{r, echo = FALSE, eval = TRUE}
-if(file.exists("BFicc.RData")){
-  load("BFicc.RData")
-} else {
-  set.seed(123)
-  BFicc <- BF(outlme1, hypothesis = 
-      "groupNL11 < groupHR11 < groupDE11 < groupDK11;
-      groupNL11 = groupHR11 = groupDE11 = groupDK11")
-  save(BFicc, file = "BFicc.RData")
-}
-
+R> set.seed(123)
+R> BFicc <- BF(outlme1, hypothesis = 
++    "groupNL11 < groupHR11 < groupDE11 < groupDK11;
++    groupNL11 = groupHR11 = groupDE11 = groupDK11")
 ```
-The output object contains the posterior mean and median estimates of the ICCs (obtained via `BFicc$estimates`), which are represented in Table \ref{tableICC}. The REML intraclass correlation estimates are also given for each country, which followed directly from the random effect estimates of the `lmer` output. It can be seen that the posterior mean and REML estimates are quite close, and the REML estimates are also located between the 2.5\% and 97.5\% percentile estimates.
+The output object contains the posterior mean and median estimates of the ICCs (obtained via `BFicc$estimates`), which are represented in Table \ref{tableICC}. The REML intraclass correlation estimates are also given for each country, which followed directly from the random effect estimates of the `lmer` output. It can be seen that the posterior mean and REML estimates essentially equal for these data.
+	\begin{table}[!t]
+		\centering
+		\label{tableICC}
+		\begin{tabular}{ccccc}
+			\hline
+			\multicolumn{1}{c}{Statistic} & \multicolumn{1}{c}{NL} & \multicolumn{1}{c}{HR} & \multicolumn{1}{c}{DE} & \multicolumn{1}{c}{DK} \\ \hline
+			REML     & 0.099 & 0.122 & 0.156 & 0.195 \\
+            Mean    & 0.099  &   0.126   &  0.159   &  0.198 \\
+            Median & 0.098  &   0.124 &    0.158  &   0.198 \\
+            2.5\%   & 0.061  &   0.091   &  0.123  &   0.157 \\
+            97.5\% & 0.146   &  0.168    & 0.201   &  0.245 \\ \hline
+		\end{tabular}
+				\caption{TIMSS 2011: Intraclass correlation estimates for NL, HR, DE, and DK}
+	\end{table}
 
-<!-- 	\begin{table}[!t] -->
-<!-- 		\centering -->
-<!-- 		\caption{TIMSS 2011: Intraclass correlation estimates for NL, HR, DE, and DK} -->
-<!-- 		\label{tableICC} -->
-<!-- 		\begin{tabular}{ccccc} -->
-<!-- 			\hline -->
-<!-- 			\multicolumn{1}{c}{Statistic} & \multicolumn{1}{c}{NL} & \multicolumn{1}{c}{HR} & \multicolumn{1}{c}{DE} & \multicolumn{1}{c}{DK} \\ \hline -->
-<!-- 			REML     & 0.094 & 0.122 & 0.156 & 0.195 \\ -->
-<!--             Mean    & 0.110 & 0.132 & 0.163 & 0.202 \\ -->
-<!--             Median & 0.107 & 0.130 & 0.162 & 0.201 \\ -->
-<!--             2.5\%   & 0.065 & 0.093 & 0.125 & 0.159 \\ -->
-<!--             97.5\% & 0.173 & 0.179 & 0.208 & 0.252 \\ \hline -->
-<!-- 		\end{tabular} -->
-<!-- 	\end{table} -->
-
-By running `summary(BFicc)` we get the results of the exploratory and confirmatory tests. 
-The exploratory tests provide posterior probabilities of whether each intraclass correlation equals zero, negative, or positive. Evidence in favor of a negative intraclass correlation indicates that a multilevel model may not be appropriate for modeling these data [@MulderFox2019]. As can be seen the exploratory results indicate that a multilevel model is a appropriate for these data:
+By running \code{summary(BFicc)} we get the results of the exploratory and confirmatory tests. 
+The exploratory tests provide posterior probabilities of whether each intraclass correlation equals zero, negative, or positive. Evidence in favor of a negative intraclass correlation indicates that a multilevel model may not be appropriate for modeling these data \citep{MulderFox:2019}. As can be seen the exploratory results indicate that a multilevel model is a appropriate for these data:
 <!--
-BFpack: Exploratory Bayes factor tests for an object of class lmerMod:
+Bayesian hypothesis test
+Type: Exploratory
+Object: lmerMod
+Parameter: intraclass correlations
+Method: Bayes factor based on uniform priors
+
           icc=0 icc<0 icc>0
 groupNL11     0     0     1
 groupHR11     0     0     1
@@ -850,28 +593,104 @@ groupDK11     0     0     1
 Furthermore the posterior probabilities of the specified hypotheses shows how our beliefs are updated in light of the observed data regarding the hypotheses that were formulated on the variation of school performance across countries.
 <!--
 Bayesian hypothesis test
-Type: Exploratory
+Type: Confirmatory
 Object: lmerMod
 Parameter: intraclass correlations
 Method: Bayes factor based on uniform priors
 
 Posterior probabilities:
    Pr(hypothesis|data)
-H1               0.509
-H2               0.471
-H3               0.020
+H1               0.080
+H2               0.890
+H3               0.030
 
 Hypotheses:
 H1: groupNL11<groupHR11<groupDE11<groupDK11
 H2: groupNL11=groupHR11=groupDE11=groupDK11
 H3: complement
 -->
-The posterior probabilities of the three hypotheses in the confirmatory test reveal that there is approximately equal plausibility for $H_2$ and $H_3$ to be true (with posterior probabilities of 0.509 and 0.471, respectively), and the complement hypothesis is unlike to be true (with a posterior probability of 0.020). It can be concluded that the data gave most support to an ordering of the intraclass correlations, where the Netherlands have the smallest intraclass correlation and Denmark the highest. The evidence however is practically equal to the evidence for the equality hypothesis. Efficient sampling strategies are needed in countries with positive intraclass correlations, where countries with higher intraclass correlations will benefit more from efficient stratification strategies. 
+The posterior probabilities of the three hypotheses in the confirmatory test reveal that the hypothesis of equal intraclass correlations receives most evidence from the data, followed by the order hypothesis, followed by the complement hypothesis, with posterior probabilities of .890, .080, and .030, respectively. These results indicate that there is evidence that an approximate equal and positive degree of clustering is present across countries.
 
 
-# Concluding remarks
+## 8. Relational event models for analyzing communication networks
+The relational event model (REM) allows researchers to investigate what mechanisms drive time-stamped relational events between actors in a social network \citep{Butts:2008}. The model can be seen as a cox proportional hazards model for the inter-event times based on time-varying covariates \citep{DuBois:2013}. The goal is to model the event rate between pairs of actors over time. Technical details of the model can be found in these two articles. The goal of the current section is to (i) illustrate how to test constrained hypotheses under REMs and (ii) illustrate how to use the default function of `BF` which only requires the unconstrained estimates of the parameters of interest, its error covariance matrix, and the sample size (see the second part of Section 3), in addition to the hypotheses.
 
-The `R` package `BFpack` was designed to allow substantive researchers to perform Bayes factor tests via commonly used statistical functions in `R`, such as `lm`, `aov`, `hetcor`, or `glm`. Furthermore by specifying a simple string that captures the hypotheses of interest, users can make use of the flexibility of Bayes factors to simultaneously test multiple hypotheses which may involve equality as well as order constraints on the parameters of interest. This will allow users to move beyond traditional null hypothesis (significance) testing. In the near future the package will be extended by also including more complex statistical models such as structural equation models and generalized linear mixed models.
+In the current application, a simulated sequence of e-mail messages is analyzed based on the study of
+
+\cite{MulderLeenders:2019}. This sample consists of 247 relational events in a network of 25 actors. It was investigated which mechanisms drive employees of a consultancy firm to send emails about innovation to each other, and to what degree. Homophily is often an important driver of relational events, which implies that individuals with similar attributes have an increased rate of interaction. Two attributes are considered in this context: (i) whether sender and receiver work in the same division, and (ii) whether sender and receiver have the same hierarchical position. Based on \cite{MulderLeenders:2019}, the following constrained hypotheses will be tested: 
+\begin{align*}
+\begin{split}
+H_1&: \beta_\text{same division} = \beta_\text{same hierarchy} > 0\\
+H_2&: \beta_\text{same division} > \beta_\text{same hierarchy} > 0\\
+H_3&: \text{none of the above}
+\end{split}
+\end{align*}
+Hypothesis $H_1$ assumes that the effects of working in the same division and having similar hierarchical position have an equal positive effect on the event rate. Hypothesis $H_2$ assumes that working in the same division has a larger effect than working in the same building, and both effects are positive. The complement hypothesis $H_3$ assumes that neither the constraints under $H_1$ nor the constraints under $H_2$ hold.
+
+To test these hypotheses first the unconstrained REM is fit using the `R` package `relevent` \citep{relevent:2015} where the event rate between actor $s$ and $r$ at time $t$ follows a log linear function of the form
+\begin{eqnarray*}
+\log \lambda(s,r,t) &=& \beta_0 + \beta_{\text{inertia}}~ x_{\text{inertia}}(s,r,t) + \beta_\text{same division} ~x_\text{same division}(s,r)\\
+&& + \beta_\text{same hierarchy}~x_\text{same hierarchy}(s,r)
+\end{eqnarray*}
+where $\beta_0$ is the intercept capturing the baseline of the event rate, $\beta_{\text{inertia}}$ is the inertia effect (i.e., the general tendency for actors to keep sending messages to actors who they sent messages to in the past), $x_{inertia}(s,r,t)$ is the number of past events from $s$ to $r$ until time $t$, and $x_\text{same division}(s,r)$ and $x_\text{same hierarchy}(s,r)$ are dichotomous variables whether actor $s$ and $r$ work in the same division (1=yes, 0=no) and whether actor $s$ and $r$ have the same hierarchical level (1=yes, 0=no). Given the hypotheses, the intercept and the inertia effect are nuisance parameters in the current application. The model can be fit as follows
+```
+library(relevent)
+CovEventEff <- array(NA, dim = c(3, nrow(actors), nrow(actors)))
+CovEventEff[1,,] <- 1
+CovEventEff[2,,] <- as.matrix(same_division)
+CovEventEff[3,,] <- as.matrix(same_hierarchy)
+dimnames(CovEventEff)[[1]] <- c("baseline", "division", "hierarchy")
+set.seed(9227)
+remfit <- rem.dyad(edgelist = relevents, n = nrow(actors), effects = 
+  c("FrPSndSnd", "CovEvent"), covar = list(CovEvent = CovEventEff),
+  hessian = TRUE, fit.method = "BPM")
+```
+
+Bayes factors and posterior model probabilities for the evaluation of these informative hypotheses can be obtained with `BFpack` by running the following lines of code:
+```
+names(remfit$coef) <- c("inertia","baseline","division", "hierarchy")
+hypothesis <- "division = hierarchy > 0; division > hierarchy > 0"
+estimates <- remfit$coef
+covmatrix <- remfit$cov
+samplesize <- remfit$m
+BFrem <- BF(estimates, Sigma = covmatrix, n = samplesize, 
+  hypothesis = hypothesis)
+print(BFrem)
+```
+In the first line new names are given to the estimated values with a clearer interpretation. These names are then used for formulating constrained hypotheses in the `hypothesis` argument. The following output is then obtained:
+<!--
+Call:
+BF.default(x = estimates, hypothesis = hypothesis, Sigma = covmatrix, 
+    n = samplesize)
+
+Bayesian hypothesis test
+Type: Confirmatory
+Object: numeric
+Parameter: General
+Method: Bayes factor using Gaussian approximations
+
+Posterior probabilities:
+   Pr(hypothesis|data)
+H1               0.000
+H2               0.913
+H3               0.087
+
+Evidence matrix:
+         H1    H2     H3
+H1    1.000 0.000  0.002
+H2 6070.727 1.000 10.534
+H3  576.305 0.095  1.000
+
+Hypotheses:
+H1: division=hierarchy>0
+H2: division>hierarchy>0
+H3: complement
+-->
+The Bayes factors and posterior probabilities reveal there is most evidence for $H_2$ (with a posterior probability of 0.913), followed by the complement hypothesis $H_3$ (with a posterior probability of 0.087), and finally hypothesis $H_1$ received a posterior probability of zero. This suggests that there is most support that working in the same division has a larger effect on information sharing than hierarchical similarity and that both effects are positive. There is still a probability of .087 that the complement may be true after observing the data. More data would be needed in order to draw more decisive conclusions.
+
+
+
+
 
 \section*{Acknowledgments}
 \begin{leftbar}
